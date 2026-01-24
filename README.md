@@ -21,13 +21,6 @@ Create voices from natural language descriptions - no audio needed!
 - Describe age, gender, emotion, accent, speaking style
 - Generate unique voices matching your description
 
-### Clone Design
-Use your saved voice designs to generate new content with full style control.
-
-1. Save designs you like from Voice Design tab
-2. Load saved designs anytime
-3. Generate new content with consistent voice style
-
 ### Custom Voice
 Generate with premium pre-built voices with optional style instructions:
 
@@ -60,6 +53,9 @@ Ryan: Hey, how's it going?
 Vivian: I'm doing great, thanks for asking!
 Aiden: Mind if I join this conversation?
 ```
+
+### Output History
+View, play back, and manage your previously generated audio files.
 
 ### Prep Samples
 Full audio preparation workspace:
