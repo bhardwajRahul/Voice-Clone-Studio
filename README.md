@@ -1,7 +1,5 @@
 # Voice Clone Studio
 
-**Version 0.2.3**
-
 A Gradio-based web UI for voice cloning and voice design, powered by [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) and [VibeVoice](https://github.com/microsoft/VibeVoice).
 Supports both Whisper or VibeVoice-asr for automatic Transcription.
 
@@ -294,3 +292,24 @@ This project is based on and uses code from:
 - [VibeVoice](https://github.com/microsoft/VibeVoice) by Microsoft
 - [Gradio](https://gradio.app/) for the web UI framework
 - [OpenAI Whisper](https://github.com/openai/whisper) for transcription
+
+
+## Versions
+
+**Version 0.3** - Enhanced Media Support
+- Video File Support - Upload video files (.mp4, .mov, .avi, .mkv, etc.) to Prep Samples tab
+- Automatic Audio Extraction - Uses ffmpeg to extract audio from video files for voice cloning
+- Improved Workflow - Added Clear button to quickly reset the audio editor
+
+**Version 0.2** - VibeVoice Integration
+- Added **VibeVoice TTS** support for long-form multi-speaker generation (up to 90 minutes)
+- Added **VibeVoice ASR** as alternative transcription engine alongside Whisper
+- Conversation tab now supports both Qwen (9 preset voices) and VibeVoice (custom samples) engines
+- Multi-speaker conversation support with up to 4 custom voices
+
+**Version 0.1** - Initial Release
+- Voice cloning with Qwen3-TTS (Base, CustomVoice, VoiceDesign models)
+- Whisper-powered automatic transcription
+- Sample preparation toolkit (trim, normalize, mono conversion)
+- Voice prompt caching for faster generation
+- Seed control for reproducible outputs

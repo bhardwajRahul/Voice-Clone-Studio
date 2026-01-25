@@ -1487,17 +1487,89 @@ def load_output_audio(file_path):
 
 # ============== Prep Samples Functions ==============
 
+def is_video_file(filepath):
+    """Check if file is a video based on extension."""
+    if not filepath:
+        return False
+    video_extensions = {'.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv', '.webm', '.m4v', '.mpeg', '.mpg'}
+    return Path(filepath).suffix.lower() in video_extensions
+
+
+def is_audio_file(filepath):
+    """Check if file is an audio file based on extension."""
+    if not filepath:
+        return False
+    audio_extensions = {'.wav', '.mp3', '.flac', '.ogg', '.m4a', '.aac', '.wma', '.opus'}
+    return Path(filepath).suffix.lower() in audio_extensions
+
+
+def extract_audio_from_video(video_path):
+    """Extract audio from video file using ffmpeg."""
+    try:
+        import subprocess
+
+        # Create temp output path
+        timestamp = datetime.now().strftime('%H%M%S')
+        audio_output = TEMP_DIR / f"extracted_audio_{timestamp}.wav"
+
+        # Use ffmpeg to extract audio
+        cmd = [
+            'ffmpeg',
+            '-i', str(video_path),
+            '-vn',  # No video
+            '-acodec', 'pcm_s16le',  # PCM 16-bit
+            '-ar', '24000',  # 24kHz sample rate
+            '-ac', '1',  # Mono
+            '-y',  # Overwrite output
+            str(audio_output)
+        ]
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        if result.returncode == 0 and audio_output.exists():
+            return str(audio_output)
+        else:
+            print(f"ffmpeg error: {result.stderr}")
+            return None
+
+    except FileNotFoundError:
+        print("❌ ffmpeg not found. Please install ffmpeg to extract audio from video.")
+        return None
+    except Exception as e:
+        print(f"Error extracting audio: {e}")
+        return None
+
+
 def on_prep_audio_load(audio_file):
-    """When audio is loaded in prep tab, get its info."""
+    """When audio/video is loaded in prep tab, get its info and extract audio if needed."""
     if audio_file is None:
-        return "No audio loaded"
+        return None, "No file loaded"
 
     try:
-        duration = get_audio_duration(audio_file)
-        info_text = f"Duration: {format_time(duration)} ({duration:.2f}s)"
-        return info_text
+        # Check if it's a video file
+        if is_video_file(audio_file):
+            print(f"Video file detected: {Path(audio_file).name}")
+            print("Extracting audio from video...")
+            audio_path = extract_audio_from_video(audio_file)
+
+            if audio_path:
+                duration = get_audio_duration(audio_path)
+                info_text = f"🎬 Video → Audio extracted\nDuration: {format_time(duration)} ({duration:.2f}s)"
+                return audio_path, info_text
+            else:
+                return None, "❌ Failed to extract audio from video. Make sure file has audio track."
+
+        # It's an audio file
+        elif is_audio_file(audio_file):
+            duration = get_audio_duration(audio_file)
+            info_text = f"Duration: {format_time(duration)} ({duration:.2f}s)"
+            return audio_file, info_text
+
+        else:
+            return None, "❌ Unsupported file type. Please upload audio (.wav, .mp3, etc.) or video (.mp4, .mov, etc.)"
+
     except Exception as e:
-        return f"Error: {str(e)}"
+        return None, f"Error: {str(e)}"
 
 
 def normalize_audio(audio_file):
@@ -2322,7 +2394,7 @@ def create_ui():
                 ### Prepare Voice Samples
 
                 Load, trim, edit, transcribe, and manage your voice samples. This is your workspace for preparing
-                high-quality reference audio for voice cloning.
+                reference audio for voice cloning.
                 """)
 
                 with gr.Row():
@@ -2362,21 +2434,29 @@ def create_ui():
                             interactive=False
                         )
 
-                    # Right column - Audio editing
+                    # Right column - Audio/Video editing
                     with gr.Column(scale=2):
-                        gr.Markdown("### ✂️ Edit Audio")
+                        gr.Markdown("### ✂️ Edit Audio/Video")
 
-                        prep_audio_input = gr.Audio(
-                            label="Working Audio (Use Trim icon to edit)",
+                        prep_file_input = gr.File(
+                            label="Audio or Video File",
                             type="filepath",
-                            sources=["upload", "microphone"],
+                            file_types=["audio", "video"],
                             interactive=True
+                        )
+
+                        prep_audio_editor = gr.Audio(
+                            label="Audio Editor (Use Trim icon ✂️ to edit)",
+                            type="filepath",
+                            interactive=True,
+                            visible=False
                         )
 
                         # gr.Markdown("#### Quick Actions")
                         with gr.Row():
-                            normalize_btn = gr.Button("Normalize Volume")
-                            mono_btn = gr.Button("Convert to Mono")
+                            clear_btn = gr.Button("Clear", size="sm")
+                            normalize_btn = gr.Button("Normalize Volume", size="sm")
+                            mono_btn = gr.Button("Convert to Mono", size="sm")
 
                         prep_audio_info = gr.Textbox(
                             label="Audio Info",
@@ -2425,19 +2505,19 @@ def create_ui():
                 def load_sample_to_editor(sample_name):
                     """Load sample into the working audio editor."""
                     if not sample_name:
-                        return None, "", "No sample selected"
+                        return None, None, "", "No sample selected", gr.update(visible=False)
                     samples = get_available_samples()
                     for s in samples:
                         if s["name"] == sample_name:
                             duration = get_audio_duration(s["wav_path"])
                             info = f"Duration: {format_time(duration)} ({duration:.2f}s)"
-                            return s["wav_path"], s["ref_text"], info
-                    return None, "", "Sample not found"
+                            return s["wav_path"], s["wav_path"], s["ref_text"], info, gr.update(visible=True)
+                    return None, None, "", "Sample not found", gr.update(visible=False)
 
                 load_sample_btn.click(
                     load_sample_to_editor,
                     inputs=[existing_sample_dropdown],
-                    outputs=[prep_audio_input, transcription_output, prep_audio_info]
+                    outputs=[prep_file_input, prep_audio_editor, transcription_output, prep_audio_info, prep_audio_editor]
                 )
 
                 # Preview on dropdown change
@@ -2474,38 +2554,51 @@ def create_ui():
                     outputs=[save_status, existing_sample_info]
                 )
 
-                # When audio is loaded/changed in editor
-                prep_audio_input.change(
+                # When file is loaded/changed
+                prep_file_input.change(
                     on_prep_audio_load,
-                    inputs=[prep_audio_input],
-                    outputs=[prep_audio_info]
+                    inputs=[prep_file_input],
+                    outputs=[prep_audio_editor, prep_audio_info]
+                ).then(
+                    lambda audio: (
+                        gr.update(visible=audio is not None),
+                        gr.update(visible=audio is None)
+                    ),
+                    inputs=[prep_audio_editor],
+                    outputs=[prep_audio_editor, prep_file_input]
+                )
+
+                # Clear file input and reset
+                clear_btn.click(
+                    lambda: (None, None, ""),
+                    outputs=[prep_file_input, prep_audio_editor, prep_audio_info]
                 )
 
                 # Normalize
                 normalize_btn.click(
                     normalize_audio,
-                    inputs=[prep_audio_input],
-                    outputs=[prep_audio_input]
+                    inputs=[prep_audio_editor],
+                    outputs=[prep_audio_editor]
                 )
 
                 # Convert to mono
                 mono_btn.click(
                     convert_to_mono,
-                    inputs=[prep_audio_input],
-                    outputs=[prep_audio_input]
+                    inputs=[prep_audio_editor],
+                    outputs=[prep_audio_editor]
                 )
 
                 # Transcribe
                 transcribe_btn.click(
                     transcribe_audio,
-                    inputs=[prep_audio_input, whisper_language, transcribe_model],
+                    inputs=[prep_audio_editor, whisper_language, transcribe_model],
                     outputs=[transcription_output]
                 )
 
                 # Save as sample
                 save_sample_btn.click(
                     save_as_sample,
-                    inputs=[prep_audio_input, transcription_output, new_sample_name],
+                    inputs=[prep_audio_editor, transcription_output, new_sample_name],
                     outputs=[save_status, existing_sample_dropdown, sample_dropdown, new_sample_name]
                 )
 
