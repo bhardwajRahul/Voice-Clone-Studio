@@ -11,7 +11,7 @@ Supports both Whisper or VibeVoice-asr for automatic Transcription.
 ## Features
 
 ### Voice Clone
-Clone voices from your own audio samples. Just provide a 5-10 second reference audio with its transcript, and generate new speech in that voice.
+Clone voices from your own audio samples. Just provide a short reference audio clip with its transcript, and generate new speech in that voice.
 **Choose Your Engine:**
 - **Qwen Small/Fast or VibeVoice Small/Fast** - 
 
