@@ -969,6 +969,28 @@ def generate_voice_design(text_to_generate, language, instruct, seed, progress=g
         return None, f"❌ Error generating audio: {str(e)}"
 
 
+def extract_style_instructions(text):
+    """Extract style instructions from parentheses and return clean text + instructions.
+
+    Example: "(nervous) Hello there (excited)" -> ("Hello there", "nervous, excited")
+    """
+    import re
+
+    # Find all text within parentheses
+    instructions = re.findall(r'\(([^)]+)\)', text)
+
+    # Remove all parentheses and their content from the text
+    clean_text = re.sub(r'\s*\([^)]+\)\s*', ' ', text)
+
+    # Clean up extra spaces
+    clean_text = ' '.join(clean_text.split())
+
+    # Combine all instructions
+    combined_instruct = ', '.join(instructions) if instructions else ''
+
+    return clean_text, combined_instruct
+
+
 def generate_custom_voice(text_to_generate, language, speaker, instruct, seed, model_size="1.7B", progress=gr.Progress()):
     """Generate audio using the CustomVoice model with premium speakers."""
     if not text_to_generate or not text_to_generate.strip():
@@ -1110,13 +1132,25 @@ def generate_conversation(conversation_data, pause_duration, language, seed, mod
 
         for i, (speaker, text) in enumerate(lines):
             progress_val = 0.1 + (0.8 * i / len(lines))
-            progress(progress_val, desc=f"Generating line {i + 1}/{len(lines)} ({speaker})...")
 
-            wavs, sr = model.generate_custom_voice(
-                text=text,
-                language=language if language != "Auto" else "Auto",
-                speaker=speaker,
-            )
+            # Extract style instructions from parentheses
+            clean_text, style_instruct = extract_style_instructions(text)
+
+            if style_instruct:
+                progress(progress_val, desc=f"Line {i + 1}/{len(lines)} [{style_instruct[:15]}...]")
+            else:
+                progress(progress_val, desc=f"Line {i + 1}/{len(lines)} ({speaker})")
+
+            # Generate with optional style instructions
+            kwargs = {
+                "text": clean_text,
+                "language": language if language != "Auto" else "Auto",
+                "speaker": speaker,
+            }
+            if style_instruct:
+                kwargs["instruct"] = style_instruct
+
+            wavs, sr = model.generate_custom_voice(**kwargs)
             all_wavs.append(wavs[0])
 
         # Concatenate with pauses
@@ -1267,12 +1301,15 @@ def generate_vibevoice_longform(script_text, voice_samples_dict, model_size="1.5
 
         # Reconstruct script with proper formatting for VibeVoice
         # VibeVoice expects: "Speaker 0: text\nSpeaker 1: text" (0-based indexing)
+        # Strip style instructions (parentheses) as VibeVoice would read them aloud
         formatted_lines = []
         for speaker, text, original_num in lines:
             # Map to 0-based index for VibeVoice
             if speaker in speaker_to_sample:
                 vv_speaker_num = speaker_to_sample[speaker]
-                formatted_lines.append(f"Speaker {vv_speaker_num}: {text}")
+                # Remove style instructions from text for VibeVoice
+                clean_text, _ = extract_style_instructions(text)
+                formatted_lines.append(f"Speaker {vv_speaker_num}: {clean_text}")
 
         formatted_script = '\n'.join(formatted_lines)
 
@@ -1292,7 +1329,7 @@ def generate_vibevoice_longform(script_text, voice_samples_dict, model_size="1.5
             if torch.is_tensor(v):
                 inputs[k] = v.to(device)
 
-        progress(0.6, desc="Generating audio (this may take several minutes for long scripts)...")
+        progress(0.6, desc="Generating audio...")
 
         # Set inference steps
         model.set_ddpm_inference_steps(num_steps=10)
@@ -1644,7 +1681,7 @@ def transcribe_audio(audio_file, whisper_language, transcribe_model, progress=gr
         else:  # Default to Whisper
             if not WHISPER_AVAILABLE:
                 return "❌ Whisper not available. Please use VibeVoice ASR instead."
-            
+
             progress(0.2, desc="Loading Whisper model...")
             try:
                 model = get_whisper_model()
@@ -1981,8 +2018,7 @@ def create_ui():
                 gr.Markdown("""
                 ### Create Multi-Speaker Conversations
 
-                Generate dialogues between different speakers using [N]: format.
-                Choose between **Qwen** (fast, preset voices) or **VibeVoice** (high-quality, custom voices, up to 90 minutes).
+                Choose between **Qwen** (preset voices with support for Style Instructions) or **VibeVoice** (high-quality, custom voices, up to 90 minutes).
                 """)
 
                 # Model selector at top
@@ -1993,8 +2029,7 @@ def create_ui():
                     conv_model_type = gr.Radio(
                         choices=["Qwen", "VibeVoice"],
                         value=initial_conv_model,
-                        label="🤖 TTS Engine",
-                        info="Qwen = Fast with preset voices | VibeVoice = High-quality with custom voice cloning (up to 90 min)"
+                        label="🤖 TTS Engine"
                     )
 
                 with gr.Row():
@@ -2005,14 +2040,16 @@ def create_ui():
                         conversation_script = gr.Textbox(
                             label="Script",
                             placeholder=dedent("""\
-                                Use [N]: format for speaker labels:
+                                Use [N]: format for speaker labels. Add (style) for emotions:
 
-                                [1]: Hey, how's it going?
-                                [2]: I'm doing great, thanks for asking!
+                                [1]: (cheerful) Hey, how's it going?
+                                [2]: (excited) I'm doing great, thanks for asking!
                                 [1]: That's wonderful to hear.
-                                [3]: Mind if I join this conversation?"""),
+                                [3]: (curious) Mind if I join this conversation?
+
+                                Style instructions work with Qwen only (VibeVoice ignores them)."""),
                             lines=12,
-                            info="One line per speaker turn. Format: [N]: Text"
+                            info="One line per speaker turn. Format: [N]: Text with (optional style) for Qwen."
                         )
 
                         # Qwen speaker mapping (visible when Qwen selected)
@@ -2493,16 +2530,16 @@ def create_ui():
                                     value=_user_config.get("whisper_language", "Auto-detect"),
                                     label="Language",
                                 )
-                                
+
                                 # Offer available transcription models
                                 available_models = ['VibeVoice ASR']
                                 if WHISPER_AVAILABLE:
                                     available_models.insert(0, 'Whisper')
-                                
+
                                 default_model = _user_config.get("transcribe_model", "Whisper")
                                 if default_model not in available_models:
                                     default_model = available_models[0]
-                                
+
                                 transcribe_model = gr.Dropdown(
                                     choices=available_models,
                                     value=default_model,
