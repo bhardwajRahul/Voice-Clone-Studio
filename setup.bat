@@ -3,6 +3,13 @@ echo ========================================
 echo Voice Clone Studio - Setup Script
 echo ========================================
 echo.
+echo Select CUDA version for PyTorch:
+echo   1. CUDA 12.1 (recommended for older GPUs, GTX 10-series and newer)
+echo   2. CUDA 12.8 (for newer GPUs)
+echo   3. CUDA 13.0 (latest, for newest GPUs)
+echo.
+set /p "CUDA_CHOICE=Enter choice (1/2/3): "
+echo.
 
 REM Check Python version
 echo [1/6] Checking Python installation...
@@ -15,14 +22,22 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-REM Install SOX using winget
-echo [2/6] Installing SOX (audio processing library)...
-echo Installing via winget...
+REM Install media processing tools
+echo [2/6] Installing media processing tools...
+echo Installing SOX...
 winget install -e --id ChrisBagwell.SoX --accept-source-agreements --accept-package-agreements
 if %errorlevel% neq 0 (
     echo WARNING: SOX installation may have failed.
     echo You can also install manually from: https://sourceforge.net/projects/sox/files/sox/
     echo Or using Chocolatey: choco install sox
+)
+echo.
+echo Installing ffmpeg...
+winget install -e --id Gyan.FFmpeg --accept-source-agreements --accept-package-agreements
+if %errorlevel% neq 0 (
+    echo WARNING: ffmpeg installation may have failed.
+    echo You can also install manually from: https://ffmpeg.org/download.html
+    echo Or using Chocolatey: choco install ffmpeg
 )
 echo.
 
@@ -51,79 +66,29 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-REM Install PyTorch with appropriate CUDA version
+REM Install PyTorch
 echo [5/6] Installing PyTorch...
-echo Checking for NVIDIA GPU support...
-nvidia-smi >nul 2>&1
-if %errorlevel% equ 0 (
-    setlocal enabledelayedexpansion
-    echo GPU detected!
-    echo.
-    echo NVIDIA GPU Info:
-    nvidia-smi
-    echo.
-    
-    REM Extract CUDA version from nvidia-smi output
-    for /f "tokens=* usebackq" %%i in (`nvidia-smi ^| findstr /i "cuda version"`) do set CUDA_LINE=%%i
-    
-    REM Parse CUDA version using string replacement
-    REM Remove everything up to and including "CUDA Version: "
-    set CUDA_VERSION=!CUDA_LINE:*CUDA Version: =!
-    REM Take only the first token (version number)
-    for /f "tokens=1" %%i in ("!CUDA_VERSION!") do set CUDA_VERSION=%%i
-    
-    if defined CUDA_VERSION (
-        echo Detected CUDA Version: !CUDA_VERSION!
-        
-        REM Determine which CUDA wheel to use (max cu130)
-        REM Extract major version (everything before the dot)
-        for /f "tokens=1 delims=." %%i in ("!CUDA_VERSION!") do set CUDA_MAJOR=%%i
-        
-        REM Extract minor version (everything after the dot)
-        for /f "tokens=2 delims=." %%i in ("!CUDA_VERSION!") do set CUDA_MINOR=%%i
-        
-        if !CUDA_MAJOR! geq 13 (
-            set CUDA_WHEEL=cu130
-            echo Will use: CUDA 13.0 wheel (detected version is 13.x, capping at max supported)
-        ) else if !CUDA_MAJOR! equ 12 (
-            set CUDA_WHEEL=cu12!CUDA_MINOR!
-            echo Will use: CUDA 12.!CUDA_MINOR! wheel
-        ) else (
-            set CUDA_WHEEL=cu130
-            echo CUDA version too old, will attempt CUDA 13.0
-        )
-    ) else (
-        echo Could not detect CUDA version, will attempt CUDA 13.0
-        set CUDA_WHEEL=cu130
-    )
-    echo.
-    
-    REM Try detected CUDA version first
-    echo Attempting !CUDA_WHEEL! installation...
+setlocal enabledelayedexpansion
+
+if "%CUDA_CHOICE%"=="1" set CUDA_VER=cu121
+if "%CUDA_CHOICE%"=="2" set CUDA_VER=cu128
+if "%CUDA_CHOICE%"=="3" set CUDA_VER=cu130
+
+if defined CUDA_VER (
+    echo Installing PyTorch with !CUDA_VER!...
     echo This may take several minutes...
-    pip install torch==2.9.1 torchaudio --index-url https://download.pytorch.org/whl/!CUDA_WHEEL!
-    if !errorlevel! equ 0 (
-        echo !CUDA_WHEEL! installation successful!
-    ) else (
-        echo !CUDA_WHEEL! failed, trying CPU-only version...
-        pip install torch==2.9.1 torchaudio
-        if !errorlevel! neq 0 (
-            echo ERROR: Failed to install PyTorch!
-            pause
-            exit /b 1
-        )
-    )
-    endlocal
-) else (
-    echo No GPU detected or NVIDIA driver not found, installing CPU-only version...
-    echo This may take several minutes...
-    pip install torch==2.9.1 torchaudio
-    if %errorlevel% neq 0 (
+    pip install torch==2.9.1 torchaudio --index-url https://download.pytorch.org/whl/!CUDA_VER!
+    if !errorlevel! neq 0 (
         echo ERROR: Failed to install PyTorch!
         pause
         exit /b 1
     )
+) else (
+    echo Invalid CUDA choice! Please run setup again.
+    pause
+    exit /b 1
 )
+endlocal
 echo.
 
 REM Install requirements

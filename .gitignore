@@ -28,7 +28,7 @@ env/
 start_venv.bat
 
 # IDE
-.history/
+.history/*
 .idea/
 .vscode/
 *.swp

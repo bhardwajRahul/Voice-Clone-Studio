@@ -104,7 +104,8 @@ View, play back, and manage your previously generated audio files.
 
 - Python 3.12+
 - CUDA-compatible GPU (recommended: 8GB+ VRAM)
-- **SOX** (Sound eXchange) - Required for audio processing
+- **SOX**  (Sound eXchange) - Required for audio processing
+- **FFMPEG** - Multimedia framework required for audio format conversion and Whisper transcription
 - [Flash Attention 2](https://github.com/Dao-AILab/flash-attention) (optional but recommended)
 
 ### Setup
@@ -174,7 +175,23 @@ sudo dnf install sox sox-devel
 brew install sox
 ```
 
-6. (Optional) Install Flash Attention 2 for better performance:
+6. Install ffmpeg
+
+```bash
+# Windows
+winget install -e --id Gyan.FFmpeg
+
+# Linux
+# Debian/Ubuntu
+sudo apt install ffmpeg
+# Fedora/RHEL
+sudo dnf install ffmpeg
+
+# MacOs
+brew install ffmpeg
+```
+
+7. (Optional) Install Flash Attention 2 for better performance:
 ```bash
 # Option 1 - Build from source (requires C++ compiler):
 pip install flash-attn --no-build-isolation
