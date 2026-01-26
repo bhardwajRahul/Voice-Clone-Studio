@@ -2389,7 +2389,7 @@ def convert_all_finetune_audio(folder, progress=gr.Progress()):
 
 # ============== Training Functions ==============
 
-def train_model(folder, speaker_name, ref_audio_filename, model_size, batch_size, learning_rate, num_epochs, progress=gr.Progress()):
+def train_model(folder, speaker_name, ref_audio_filename, model_size, batch_size, learning_rate, num_epochs, save_interval, progress=gr.Progress()):
     """Complete training workflow: validate, prepare data, and train model."""
     import subprocess
     import json
@@ -2406,6 +2406,10 @@ def train_model(folder, speaker_name, ref_audio_filename, model_size, batch_size
 
     if not ref_audio_filename:
         return "❌ Please select a reference audio file"
+
+    # Validate save_interval
+    if save_interval is None:
+        save_interval = 5  # Default value
 
     # Create output directory - use absolute path
     project_root = Path(__file__).parent
@@ -2659,6 +2663,7 @@ def train_model(folder, speaker_name, ref_audio_filename, model_size, batch_size
         "--batch_size", str(int(batch_size)),
         "--lr", str(learning_rate),
         "--num_epochs", str(int(num_epochs)),
+        "--save_interval", str(int(save_interval)),
         "--speaker_name", speaker_name.strip()
     ]
 
@@ -2667,6 +2672,7 @@ def train_model(folder, speaker_name, ref_audio_filename, model_size, batch_size
     status_log.append(f"  Batch size: {int(batch_size)}")
     status_log.append(f"  Learning rate: {learning_rate}")
     status_log.append(f"  Epochs: {int(num_epochs)}")
+    status_log.append(f"  Save interval: Every {int(save_interval)} epoch(s)" if save_interval > 0 else "  Save interval: Every epoch")
     status_log.append(f"  Speaker name: {speaker_name.strip()}")
     status_log.append(f"  Output: {output_dir}")
     status_log.append("")
@@ -2729,7 +2735,7 @@ def train_model(folder, speaker_name, ref_audio_filename, model_size, batch_size
         status_log.append("To use your trained model after completion:")
         status_log.append("  1. Go to Voice Presets tab")
         status_log.append("  2. Select 'Trained Models' radio button")
-        status_log.append("  3. Click refresh and select '{speaker_name.strip()}'")
+        status_log.append(f"  3. Click refresh and select '{speaker_name.strip()}'")
 
         progress(1.0, desc="Training launched in terminal!")
 
@@ -4032,7 +4038,7 @@ def create_ui():
 
                         speaker_name_input = gr.Textbox(
                             label="Speaker Name",
-                            value="custom_speaker",
+                            value="speaker",
                             info="Name for the trained voice model",
                             interactive=True
                         )
@@ -4099,11 +4105,20 @@ def create_ui():
 
                         num_epochs_slider = gr.Slider(
                             minimum=1,
-                            maximum=10,
-                            value=3,
+                            maximum=50,
+                            value=5,
                             step=1,
                             label="Number of Epochs",
                             info="How many times to train on the full dataset"
+                        )
+
+                        save_interval_slider = gr.Slider(
+                            minimum=0,
+                            maximum=10,
+                            value=5,
+                            step=1,
+                            label="Save Interval (Epochs)",
+                            info="Save checkpoint every N epochs (0 = save every epoch)"
                         )
 
                         training_status = gr.Textbox(
@@ -4153,7 +4168,8 @@ def create_ui():
                         model_size_radio,
                         batch_size_slider,
                         learning_rate_slider,
-                        num_epochs_slider
+                        num_epochs_slider,
+                        save_interval_slider
                     ],
                     outputs=[training_status]
                 )

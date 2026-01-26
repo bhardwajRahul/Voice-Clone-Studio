@@ -38,16 +38,17 @@ def train():
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--num_epochs", type=int, default=3)
+    parser.add_argument("--save_interval", type=int, default=5, help="Save checkpoint every N epochs (0 = save every epoch)")
     parser.add_argument("--speaker_name", type=str, default="speaker_test")
     args = parser.parse_args()
 
-    accelerator = Accelerator(gradient_accumulation_steps=4, mixed_precision="bf16", log_with="tensorboard")
+    accelerator = Accelerator(gradient_accumulation_steps=4, mixed_precision="bf16")
 
     MODEL_PATH = args.init_model_path
 
     qwen3tts = Qwen3TTSModel.from_pretrained(
         MODEL_PATH,
-        torch_dtype=torch.bfloat16,
+        dtype=torch.bfloat16,
         attn_implementation="flash_attention_2",
     )
     config = AutoConfig.from_pretrained(MODEL_PATH)
@@ -123,7 +124,19 @@ def train():
             if step % 10 == 0:
                 accelerator.print(f"Epoch {epoch} | Step {step} | Loss: {loss.item():.4f}")
 
-        if accelerator.is_main_process:
+        # Save checkpoint based on save_interval
+        should_save = False
+        if args.save_interval == 0:
+            # Save every epoch
+            should_save = True
+        elif args.save_interval > 0 and (epoch + 1) % args.save_interval == 0:
+            # Save every N epochs
+            should_save = True
+        # Always save the last epoch
+        if epoch == num_epochs - 1:
+            should_save = True
+
+        if should_save and accelerator.is_main_process:
             output_dir = os.path.join(args.output_model_path, f"checkpoint-epoch-{epoch}")
             shutil.copytree(MODEL_PATH, output_dir, dirs_exist_ok=True)
 
