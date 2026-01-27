@@ -131,8 +131,6 @@ View, play back, and manage your previously generated audio files.
 
 **Note for Linux users:** The Linux installation skips `openai-whisper` (compatibility issues). VibeVoice ASR is used for transcription instead.
 
-**Experiencing installation issues on Linux?** See [LINUX_INSTALL.md](LINUX_INSTALL.md) for detailed troubleshooting.
-
 ### Setup
 
 #### Quick Setup (Windows)
@@ -211,10 +209,6 @@ pip install -r requirements-linux.txt
 ```
 
 #### Linux-Specific Issues & Solutions
-
-**For detailed Linux troubleshooting and step-by-step fixes, see [LINUX_INSTALL.md](LINUX_INSTALL.md)**
-
-**Python Version:** Use Python 3.12+ on Linux. The Linux installation uses VibeVoice ASR for transcription (openai-whisper is skipped due to compatibility issues).
 
 **Issue: ONNX Runtime Build Failures**
 
