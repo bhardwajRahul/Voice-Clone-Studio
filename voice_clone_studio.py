@@ -3403,6 +3403,9 @@ def create_ui():
                                         info="Select from your prepared samples"
                                     )
 
+                            # Refresh button for voice samples
+                            refresh_conv_samples_btn = gr.Button("Refresh Voice Samples", size="md", variant="primary")
+
                     # Right - Settings and output
                     with gr.Column(scale=1):
                         gr.Markdown("### ⚙️ Settings")
@@ -3570,6 +3573,18 @@ def create_ui():
                     toggle_conv_ui,
                     inputs=[conv_model_type],
                     outputs=[qwen_speaker_table, vibevoice_voices_section, qwen_settings, vibevoice_settings, qwen_tips, vibevoice_tips]
+                )
+
+                # Refresh voice samples handler
+                def refresh_voice_samples():
+                    """Refresh all voice sample dropdowns."""
+                    updated_samples = get_sample_choices()
+                    return [gr.update(choices=updated_samples)] * 4
+
+                refresh_conv_samples_btn.click(
+                    refresh_voice_samples,
+                    inputs=[],
+                    outputs=[voice_sample_1, voice_sample_2, voice_sample_3, voice_sample_4]
                 )
 
             # ============== TAB 4: Voice Design ==============
