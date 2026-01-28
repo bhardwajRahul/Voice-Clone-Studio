@@ -69,7 +69,7 @@ echo.
 
 REM Update pip
 echo Updating pip...
-pip install --upgrade pip
+python.exe -m pip install --upgrade pip
 if %errorlevel% neq 0 (
     echo ERROR: Failed to update pip!
     pause
