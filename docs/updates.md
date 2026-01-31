@@ -1,5 +1,11 @@
 # Version History
 
+
+## January 30, 2026
+
+#### Version 0.7.6 - Advanced Parameters & Emotion Presets
+- Bug Fixes
+
 ## January 30, 2026
 
 #### Version 0.7.5 - Advanced Parameters & Emotion Presets

@@ -844,9 +844,9 @@ def get_whisper_model():
         # Check if user has pre-cached Whisper model in ./models/whisper/
         whisper_cache_path = Path("./models/whisper")
         if whisper_cache_path.exists():
-            _whisper_model = whisper.load_model("medium", in_memory_cache=False, download_root="./models/whisper")
+            _whisper_model = whisper.load_model("medium", download_root="./models/whisper")
         else:
-            _whisper_model = whisper.load_model("medium", in_memory_cache=False)
+            _whisper_model = whisper.load_model("medium")
         print("Whisper model loaded!")
     return _whisper_model
 
@@ -2382,7 +2382,6 @@ def generate_vibevoice_longform(script_text, voice_samples_dict, model_size="1.5
             metadata_file.write_text(metadata, encoding="utf-8")
 
             progress(1.0, desc="Done!")
-            duration = len(final_audio) / sr
             play_completion_beep()
             return str(output_file), f"Generated: {output_file.name}\n⏱️ {duration:.1f}s ({duration / 60:.1f} min) | 🎲 Seed: {seed} | 🤖 {model_size}"
         else:
@@ -4618,8 +4617,7 @@ def create_ui():
                             custom_instruct_input: gr.update(visible=True),
                             custom_emotion_row: gr.update(visible=False),
                             custom_emotion_buttons_row: gr.update(visible=False),
-                            # Reset emotion controls
-                            custom_emotion_preset: gr.update(value="(None)"),
+                            custom_emotion_preset: gr.update(value=None),
                             custom_emotion_intensity: gr.update(value=1.0),
                             custom_temperature: gr.update(value=0.9),
                             custom_top_p: gr.update(value=1.0),
@@ -6466,7 +6464,7 @@ def create_ui():
 
                             model_select = gr.Dropdown(
                                 label="Select Model to Download",
-                                info="Download models directly to models folder (recommended for offline mode)",
+                                info="Download models directly to models folder (recommended for offline mode)\nWhisper cannot be auto-downloaded, copy local copy of Whisper in ./models.",
                                 choices=[
                                     "--- Qwen3-TTS Base ---",
                                     "Qwen3-TTS-12Hz-0.6B-Base",
