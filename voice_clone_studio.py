@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 from pathlib import Path
 import torch
@@ -1493,9 +1493,9 @@ def generate_audio(sample_name, text_to_generate, language, seed, model_selectio
         play_completion_beep()
         if engine == "qwen":
             cache_msg = "⚡ Used cached prompt" if was_cached else "💾 Created & cached prompt"
-            return str(output_file), f"✅ Audio saved to: {output_file.name}\n{cache_msg} | {seed_msg} | 🤖 {engine_display}"
+            return str(output_file), f"Audio saved to: {output_file.name}\n{cache_msg} | {seed_msg} | 🤖 {engine_display}"
         else:
-            return str(output_file), f"✅ Audio saved to: {output_file.name}\n{seed_msg} | 🤖 {engine_display}"
+            return str(output_file), f"Audio saved to: {output_file.name}\n{seed_msg} | 🤖 {engine_display}"
 
     except Exception as e:
         return None, f"❌ Error generating audio: {str(e)}"
@@ -1553,7 +1553,7 @@ def generate_voice_design(text_to_generate, language, instruct, seed,
         # User must save to samples explicitly; return file path
         progress(1.0, desc="Done!")
         play_completion_beep()
-        return str(out_file), f"✅ Voice design generated. Save to samples to keep.\n{seed_msg}"
+        return str(out_file), f"Voice design generated. Save to samples to keep.\n{seed_msg}"
 
     except Exception as e:
         return None, f"❌ Error generating audio: {str(e)}"
@@ -1691,7 +1691,7 @@ def generate_custom_voice(text_to_generate, language, speaker, instruct, seed, m
         progress(1.0, desc="Done!")
         instruct_msg = f" with style: {instruct.strip()[:30]}..." if instruct and instruct.strip() else ""
         play_completion_beep()
-        return str(output_file), f"✅ Audio saved to: {output_file.name}\n🎭 Speaker: {speaker}{instruct_msg}\n{seed_msg} | 🤖 {model_size}"
+        return str(output_file), f"Audio saved to: {output_file.name}\n🎭 Speaker: {speaker}{instruct_msg}\n{seed_msg} | 🤖 {model_size}"
 
     except Exception as e:
         return None, f"❌ Error generating audio: {str(e)}"
@@ -1774,7 +1774,7 @@ def generate_with_trained_model(text_to_generate, language, speaker_name, checkp
         progress(1.0, desc="Done!")
         instruct_msg = f" with style: {instruct.strip()[:30]}..." if instruct and instruct.strip() else ""
         play_completion_beep()
-        return str(output_file), f"✅ Audio saved to: {output_file.name}\n🎭 Speaker: {speaker_name}{instruct_msg}\n{seed_msg} | 🤖 Trained Model"
+        return str(output_file), f"Audio saved to: {output_file.name}\n🎭 Speaker: {speaker_name}{instruct_msg}\n{seed_msg} | 🤖 Trained Model"
 
     except Exception as e:
         return None, f"❌ Error generating audio: {str(e)}"
@@ -1976,7 +1976,7 @@ def generate_conversation(conversation_data, pause_linebreak, pause_period, paus
         progress(1.0, desc="Done!")
         duration = len(final_audio) / sr
         play_completion_beep()
-        return str(output_file), f"✅ Conversation saved: {output_file.name}\n📝 {len(lines)} lines | ⏱️ {duration:.1f}s | 🎲 Seed: {seed} | 🤖 {model_size}"
+        return str(output_file), f"Conversation saved: {output_file.name}\n📝 {len(lines)} lines | ⏱️ {duration:.1f}s | 🎲 Seed: {seed} | 🤖 {model_size}"
 
     except Exception as e:
         return None, f"❌ Error generating conversation: {str(e)}"
@@ -2174,7 +2174,7 @@ def generate_conversation_base(conversation_data, voice_samples_dict, pause_line
         progress(1.0, desc="Done!")
         duration = len(final_audio) / sr
         play_completion_beep()
-        return str(output_file), f"✅ Conversation saved: {output_file.name}\n📝 {len(lines)} lines | ⏱️ {duration:.1f}s | 🎲 Seed: {seed} | 🤖 Base {model_size}"
+        return str(output_file), f"Conversation saved: {output_file.name}\n📝 {len(lines)} lines | ⏱️ {duration:.1f}s | 🎲 Seed: {seed} | 🤖 Base {model_size}"
 
     except Exception as e:
         import traceback
@@ -2384,7 +2384,7 @@ def generate_vibevoice_longform(script_text, voice_samples_dict, model_size="1.5
             progress(1.0, desc="Done!")
             duration = len(final_audio) / sr
             play_completion_beep()
-            return str(output_file), f"✅ Generated: {output_file.name}\n⏱️ {duration:.1f}s ({duration / 60:.1f} min) | 🎲 Seed: {seed} | 🤖 {model_size}"
+            return str(output_file), f"Generated: {output_file.name}\n⏱️ {duration:.1f}s ({duration / 60:.1f} min) | 🎲 Seed: {seed} | 🤖 {model_size}"
         else:
             return None, "❌ No audio generated."
 
@@ -2469,7 +2469,7 @@ def generate_design_then_clone(design_text, design_instruct, clone_text, languag
         metadata_file.write_text(metadata, encoding="utf-8")
 
         progress(1.0, desc="Done!")
-        return str(ref_file), str(output_file), f"✅ Generated!\n📎 Reference: {ref_file.name}\n🎵 Output: {output_file.name}\n{seed_msg}"
+        return str(ref_file), str(output_file), f"Generated!\n📎 Reference: {ref_file.name}\n🎵 Output: {output_file.name}\n{seed_msg}"
 
     except Exception as e:
         return None, None, f"❌ Error: {str(e)}"
@@ -2506,7 +2506,7 @@ def save_designed_voice(audio_file, name, instruct, language, seed, ref_text):
         json_file = target_wav.with_suffix(".json")
         json_file.write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
-        return f"✅ Saved as sample: {safe_name}", gr.update()
+        return f"Saved as sample: {safe_name}", gr.update()
 
     except Exception as e:
         return f"❌ Error saving: {str(e)}", gr.update()
@@ -2767,6 +2767,7 @@ def transcribe_audio(audio_file, whisper_language, transcribe_model, progress=gr
         transcription = result["text"].strip()
 
         # Keep [Speaker N]: format for compatibility with Conversation and VibeVoice tabs
+        play_completion_beep()
         return transcription
 
     except Exception as e:
@@ -2797,7 +2798,7 @@ def batch_transcribe_folder(folder, replace_existing, whisper_language, transcri
                 files_to_process.append(audio_file)
 
         if not files_to_process:
-            return f"✅ All {len(audio_files)} files already have transcripts. Check 'Replace existing transcripts' to re-transcribe."
+            return f"All {len(audio_files)} files already have transcripts. Check 'Replace existing transcripts' to re-transcribe."
 
         # Load model once
         status_log = []
@@ -2809,7 +2810,7 @@ def batch_transcribe_folder(folder, replace_existing, whisper_language, transcri
             progress(0.05, desc="Loading VibeVoice ASR model...")
             try:
                 model = get_vibe_voice_model()
-                status_log.append("✅ Loaded VibeVoice ASR model")
+                status_log.append("Loaded VibeVoice ASR model")
             except Exception as e:
                 return f"❌ VibeVoice ASR not available: {str(e)}"
         else:
@@ -2819,7 +2820,7 @@ def batch_transcribe_folder(folder, replace_existing, whisper_language, transcri
             progress(0.05, desc="Loading Whisper model...")
             try:
                 model = get_whisper_model()
-                status_log.append("✅ Loaded Whisper model")
+                status_log.append("Loaded Whisper model")
             except ImportError as e:
                 return f"❌ {str(e)}"
 
@@ -2874,7 +2875,7 @@ def batch_transcribe_folder(folder, replace_existing, whisper_language, transcri
                 # Save transcript
                 txt_file.write_text(transcription, encoding="utf-8")
 
-                status_log.append(f"✅ {audio_file.name} → {len(transcription)} chars")
+                status_log.append(f"{audio_file.name} → {len(transcription)} chars")
                 transcribed_count += 1
 
             except Exception as e:
@@ -2884,12 +2885,14 @@ def batch_transcribe_folder(folder, replace_existing, whisper_language, transcri
         status_log.append("=" * 60)
         status_log.append("")
         status_log.append("📊 Summary:")
-        status_log.append(f"   ✅ Transcribed: {transcribed_count}")
+        status_log.append(f"   Transcribed: {transcribed_count}")
         status_log.append(f"   ⏭️  Skipped: {skipped_count}")
         status_log.append(f"   ❌ Errors: {error_count}")
         status_log.append(f"   📝 Total: {len(audio_files)}")
 
         progress(1.0, desc="Batch transcription complete!")
+
+        play_completion_beep()
 
         return "\n".join(status_log)
 
@@ -2940,7 +2943,7 @@ def save_as_sample(audio_file, transcription, sample_name):
         choices = get_sample_choices()
 
         return (
-            f"✅ Sample saved as '{clean_name}'",
+            f"Sample saved as '{clean_name}'",
             gr.update(choices=choices),
             gr.update(choices=choices),
             ""  # Clear the sample name field
@@ -2981,7 +2984,7 @@ def delete_sample(action, sample_name):
 
     # If cancelled, return without doing anything
     if "cancel" in action:
-        return "❌ Deletion cancelled", gr.update(), gr.update()
+        return "Deletion cancelled", gr.update(), gr.update()
 
     # Only process confirm actions
     if "confirm" not in action:
@@ -3013,7 +3016,7 @@ def delete_sample(action, sample_name):
         if deleted:
             choices = get_sample_choices()
             return (
-                f"✅ Deleted {sample_name} ({', '.join(deleted)} files)",
+                f"Deleted {sample_name} ({', '.join(deleted)} files)",
                 gr.update(choices=choices, value=choices[0] if choices else None),
                 gr.update(choices=choices, value=choices[0] if choices else None)
             )
@@ -3046,9 +3049,9 @@ def clear_sample_cache(sample_name):
             if s["name"] == sample_name:
                 duration = get_audio_duration(s["wav_path"])
                 info = f"Duration: {format_time(duration)} ({duration:.2f}s)\nPrompt: 📝 Not cached"
-                return f"✅ Cache cleared for '{sample_name}'", info
+                return f"Cache cleared for '{sample_name}'", info
 
-        return f"✅ Cache cleared for '{sample_name}'", "Cache cleared"
+        return f"Cache cleared for '{sample_name}'", "Cache cleared"
 
     except Exception as e:
         return f"❌ Error clearing cache: {str(e)}", str(e)
@@ -3122,6 +3125,23 @@ def get_trained_models():
     return sorted(models, key=lambda x: x["display_name"])
 
 
+def get_trained_model_names():
+    """Get list of existing trained model names (folder names only, not checkpoints)."""
+    project_root = Path(__file__).parent
+    trained_models_folder = _user_config.get("trained_models_folder", "models")
+    models_dir = project_root / trained_models_folder
+
+    if not models_dir.exists():
+        return []
+
+    model_names = []
+    for folder in models_dir.iterdir():
+        if folder.is_dir() and (folder / "model.safetensors").exists():
+            model_names.append(folder.name)
+
+    return model_names
+
+
 def get_dataset_folders():
     """Get list of subfolders in datasets directory."""
     if not DATASETS_DIR.exists():
@@ -3193,7 +3213,7 @@ def save_dataset_transcript(folder, filename, transcript):
         audio_path = base_dir / filename
         txt_path = audio_path.with_suffix(".txt")
         txt_path.write_text(transcript.strip(), encoding="utf-8")
-        return f"✅ Saved transcript for {filename}"
+        return f"Saved transcript for {filename}"
     except Exception as e:
         return f"❌ Error saving: {str(e)}"
 
@@ -3206,7 +3226,7 @@ def delete_dataset_item(action, folder, filename):
 
     # If cancelled, return without doing anything
     if "cancel" in action:
-        return "❌ Deletion cancelled", gr.update()
+        return "Deletion cancelled", gr.update()
 
     # Only process confirm actions
     if "confirm" not in action:
@@ -3234,7 +3254,7 @@ def delete_dataset_item(action, folder, filename):
             deleted.append("transcript")
 
         files = get_dataset_files(folder)
-        msg = f"✅ Deleted {filename} ({', '.join(deleted)})" if deleted else "❌ File not found"
+        msg = f"Deleted {filename} ({', '.join(deleted)})" if deleted else "❌ File not found"
         return msg, gr.update(choices=files, value=None)
     except Exception as e:
         return f"❌ Error: {str(e)}", gr.update(choices=get_dataset_files(folder), value=None)
@@ -3274,7 +3294,7 @@ def auto_transcribe_finetune(folder, filename, transcribe_model="Whisper", langu
         txt_path = audio_path.with_suffix(".txt")
         txt_path.write_text(transcript.strip(), encoding="utf-8")
 
-        return transcript, f"✅ Transcribed and saved for {filename}"
+        return transcript, f"Transcribed and saved for {filename}"
     except Exception as e:
         return "", f"❌ Transcription failed: {str(e)}"
 
@@ -3314,7 +3334,7 @@ def convert_audio_to_finetune_format(audio_path, progress=gr.Progress()):
             temp_output.rename(output_path)
 
         progress(1.0, desc="Done!")
-        return str(output_path), "✅ Converted to 24kHz 16-bit mono"
+        return str(output_path), "Converted to 24kHz 16-bit mono"
     except FileNotFoundError:
         return None, "❌ ffmpeg not found. Please install ffmpeg"
     except Exception as e:
@@ -3338,7 +3358,7 @@ def save_trimmed_audio(audio_path, trimmed_audio):
             import shutil
             shutil.copy(trimmed_audio, audio_path)
             output_path = Path(audio_path)
-            return str(output_path), f"✅ Saved trimmed audio to {output_path.name}"
+            return str(output_path), f"Saved trimmed audio to {output_path.name}"
         else:
             # It's numpy format - convert and save
             sr, audio_data = trimmed_audio
@@ -3348,7 +3368,7 @@ def save_trimmed_audio(audio_path, trimmed_audio):
             sf.write(str(output_path), audio_data, sr, subtype='PCM_16')
 
             # Return the saved audio data so it updates in the UI
-            return (sr, audio_data), f"✅ Saved trimmed audio to {output_path.name}"
+            return (sr, audio_data), f"Saved trimmed audio to {output_path.name}"
     except Exception as e:
         return None, f"❌ Error saving: {str(e)}"
 
@@ -3421,7 +3441,7 @@ def convert_all_finetune_audio(folder, progress=gr.Progress()):
 
         progress(1.0, desc="Done!")
 
-        msg = f"✅ Converted: {converted} | Skipped (already correct): {skipped}"
+        msg = f"Converted: {converted} | Skipped (already correct): {skipped}"
         if errors:
             msg += f"\n❌ Errors: {len(errors)}\n" + "\n".join(errors[:3])
 
@@ -3460,9 +3480,8 @@ def train_model(folder, speaker_name, ref_audio_filename, batch_size, learning_r
     project_root = Path(__file__).parent
     trained_models_folder = _user_config.get("trained_models_folder", "models")
     output_dir = project_root / trained_models_folder / speaker_name.strip()
-    if output_dir.exists():
-        return f"❌ Output folder already exists: {output_dir}\n\nPlease choose a different speaker name or delete the existing folder."
 
+    # Note: Validation for existing folder is done in modal before user submits
     output_dir.mkdir(parents=True, exist_ok=True)
 
     base_dir = DATASETS_DIR / folder
@@ -3547,11 +3566,11 @@ def train_model(folder, speaker_name, ref_audio_filename, batch_size, learning_r
     if not valid_files:
         return "❌ No valid training samples found\n" + "\n".join(issues[:10])
 
-    status_log.append(f"✅ Found {len(valid_files)} valid training samples")
+    status_log.append(f"Found {len(valid_files)} valid training samples")
     if converted_count > 0:
-        status_log.append(f"✅ Auto-converted {converted_count} files to 24kHz 16-bit mono")
+        status_log.append(f"Auto-converted {converted_count} files to 24kHz 16-bit mono")
     if issues:
-        status_log.append(f"⚠️  {len(issues)} files skipped:")
+        status_log.append(f"{len(issues)} files skipped:")
         for issue in issues[:5]:
             status_log.append(f"   {issue}")
         if len(issues) > 5:
@@ -3595,7 +3614,7 @@ def train_model(folder, speaker_name, ref_audio_filename, batch_size, learning_r
         with open(train_raw_path, 'w', encoding='utf-8') as f:
             for entry in jsonl_entries:
                 f.write(json.dumps(entry, ensure_ascii=False) + '\n')
-        status_log.append(f"✅ Generated train_raw.jsonl with {len(jsonl_entries)} entries")
+        status_log.append(f"Generated train_raw.jsonl with {len(jsonl_entries)} entries")
     except Exception as e:
         return f"❌ Failed to write train_raw.jsonl: {str(e)}"
 
@@ -3661,7 +3680,7 @@ def train_model(folder, speaker_name, ref_audio_filename, batch_size, learning_r
             return "\n".join(status_log)
 
         status_log.append("")
-        status_log.append("✅ Audio codes extracted successfully")
+        status_log.append("Audio codes extracted successfully")
 
     except Exception as e:
         status_log.append(f"❌ Error running prepare_data.py: {str(e)}")
@@ -3696,7 +3715,7 @@ def train_model(folder, speaker_name, ref_audio_filename, batch_size, learning_r
             allow_patterns=["*.json", "*.safetensors", "*.txt", "*.npz"],
             local_files_only=offline_mode  # Will error if not cached in offline mode
         )
-        status_log.append(f"✅ Using cached model at: {base_model_path}")
+        status_log.append(f"Using cached model at: {base_model_path}")
     except Exception as e:
         status_log.append(f"❌ Failed to locate/download base model: {str(e)}")
         return "\n".join(status_log)
@@ -3728,7 +3747,7 @@ def train_model(folder, speaker_name, ref_audio_filename, batch_size, learning_r
     status_log.append(f"  Speaker name: {speaker_name.strip()}")
     status_log.append(f"  Output: {output_dir}")
     status_log.append("")
-    status_log.append("🚀 Starting training...")
+    status_log.append("Starting training...")
     status_log.append(f"Running: {' '.join([str(arg) for arg in sft_cmd])}")
     status_log.append("")
 
@@ -3775,10 +3794,10 @@ def train_model(folder, speaker_name, ref_audio_filename, batch_size, learning_r
 
         status_log.append("")
         status_log.append("=" * 60)
-        status_log.append("✅ TRAINING COMPLETED SUCCESSFULLY!")
+        status_log.append("TRAINING COMPLETED SUCCESSFULLY!")
         status_log.append("=" * 60)
-        status_log.append(f"📁 Model will be saved to: {output_dir}")
-        status_log.append(f"🎤 Speaker name: {speaker_name.strip()}")
+        status_log.append(f"Model will be saved to: {output_dir}")
+        status_log.append(f"Speaker name: {speaker_name.strip()}")
         status_log.append("")
         status_log.append("Monitor the terminal window for progress.")
         status_log.append("When training completes, you'll see:")
@@ -4066,7 +4085,7 @@ def create_ui():
                             # Emotion management buttons
                             with gr.Row():
                                 qwen_save_emotion_btn = gr.Button("Save", size="sm", scale=1)
-                                qwen_delete_emotion_btn = gr.Button("Delete", size="sm", scale=1, variant="primary")
+                                qwen_delete_emotion_btn = gr.Button("Delete", size="sm", scale=1)
                             qwen_emotion_save_name = gr.Textbox(visible=False, value="")
 
                             with gr.Row():
@@ -4518,7 +4537,7 @@ def create_ui():
                             # Emotion management buttons
                             with gr.Row(visible=False) as custom_emotion_buttons_row:
                                 custom_save_emotion_btn = gr.Button("Save", size="sm", scale=1)
-                                custom_delete_emotion_btn = gr.Button("Delete", size="sm", scale=1, variant="primary")
+                                custom_delete_emotion_btn = gr.Button("Delete", size="sm", scale=1)
                             custom_emotion_save_name = gr.Textbox(visible=False, value="")
 
                             with gr.Row():
@@ -5492,13 +5511,6 @@ def create_ui():
                             type="filepath"
                         )
 
-                        design_save_name = gr.Textbox(
-                            label="Sample Name",
-                            placeholder="Enter a name for this voice Sample...",
-                            info="Name under which to save the designed voice",
-                            lines=1
-                        )
-
                         design_save_btn = gr.Button("Save Sample", variant="primary")
 
                 # Voice Design event handlers
@@ -5517,12 +5529,17 @@ def create_ui():
                     outputs=[design_output_audio, design_status]
                 )
 
-                # Note: save_designed_voice returns (status, dropdown_update) but we only capture status here
-                # The Clone Design tab has its own refresh button to update the dropdown
+                # Save designed voice - show modal
                 design_save_btn.click(
-                    lambda *args: save_designed_voice(*args)[0],  # Only return status, ignore dropdown update
-                    inputs=[design_output_audio, design_save_name, design_instruct_input, design_language, design_seed, design_text_input],
-                    outputs=[design_status]
+                    fn=None,
+                    inputs=None,
+                    outputs=None,
+                    js=show_input_modal_js(
+                        title="Save Designed Voice",
+                        message="Enter a name for this voice design:",
+                        placeholder="e.g., Bright-Female, Deep-Male, Cheerful-Voice",
+                        context="save_design_"
+                    )
                 )
 
             # ============== TAB 5: Prep Samples ==============
@@ -5546,7 +5563,7 @@ def create_ui():
                             refresh_preview_btn = gr.Button("Refresh Preview", size="sm")
                             load_sample_btn = gr.Button("Load to Editor", size="sm")
                             clear_cache_btn = gr.Button("Clear Cache", size="sm")
-                            delete_sample_btn = gr.Button("Delete", size="sm", variant="primary")
+                            delete_sample_btn = gr.Button("Delete", size="sm")
 
                         existing_sample_audio = gr.Audio(
                             label="Sample Preview",
@@ -5565,7 +5582,27 @@ def create_ui():
                             interactive=False
                         )
 
-                        save_status = gr.Textbox(label="Status", interactive=False, scale=1)
+                        with gr.Row():
+                            whisper_language = gr.Dropdown(
+                                choices=["Auto-detect"] + LANGUAGES[1:],
+                                value=_user_config.get("whisper_language", "Auto-detect"),
+                                label="Language",
+                            )
+
+                            # Offer available transcription models
+                            available_models = ['VibeVoice ASR']
+                            if WHISPER_AVAILABLE:
+                                available_models.insert(0, 'Whisper')
+
+                            default_model = _user_config.get("transcribe_model", "Whisper")
+                            if default_model not in available_models:
+                                default_model = available_models[0]
+
+                            transcribe_model = gr.Dropdown(
+                                choices=available_models,
+                                value=default_model,
+                                label="Model",
+                            )
 
                     # Right column - Audio/Video editing
                     with gr.Column(scale=2):
@@ -5605,37 +5642,13 @@ def create_ui():
                                 interactive=True,
                                 placeholder="Transcription will appear here, or enter/edit text manually..."
                             )
+
                             with gr.Row():
-                                whisper_language = gr.Dropdown(
-                                    choices=["Auto-detect"] + LANGUAGES[1:],
-                                    value=_user_config.get("whisper_language", "Auto-detect"),
-                                    label="Language",
-                                )
+                                transcribe_btn = gr.Button("Transcribe Audio", variant="primary")
 
-                                # Offer available transcription models
-                                available_models = ['VibeVoice ASR']
-                                if WHISPER_AVAILABLE:
-                                    available_models.insert(0, 'Whisper')
+                                save_sample_btn = gr.Button("Save Sample", variant="primary")
 
-                                default_model = _user_config.get("transcribe_model", "Whisper")
-                                if default_model not in available_models:
-                                    default_model = available_models[0]
-
-                                transcribe_model = gr.Dropdown(
-                                    choices=available_models,
-                                    value=default_model,
-                                    label="Model",
-                                )
-
-                            transcribe_btn = gr.Button("Transcribe Audio", variant="primary")
-
-                            # Save as new sample
-                            new_sample_name = gr.Textbox(
-                                label="Sample Name",
-                                placeholder="Enter a name for this voice sample...",
-                                scale=2
-                            )
-                            save_sample_btn = gr.Button("Save Sample", variant="primary")
+                            save_status = gr.Textbox(label="Status", interactive=False, scale=1)
 
                 # Load existing sample to editor
                 def load_sample_to_editor(sample_name):
@@ -5752,11 +5765,17 @@ def create_ui():
                     outputs=[transcription_output]
                 )
 
-                # Save as sample
+                # Save sample - show modal
                 save_sample_btn.click(
-                    save_as_sample,
-                    inputs=[prep_audio_editor, transcription_output, new_sample_name],
-                    outputs=[save_status, existing_sample_dropdown, sample_dropdown, new_sample_name]
+                    fn=None,
+                    inputs=None,
+                    outputs=None,
+                    js=show_input_modal_js(
+                        title="Save Voice Sample",
+                        message="Enter a name for this voice sample:",
+                        placeholder="e.g., MyVoice, Female-Accent, John-Doe",
+                        context="save_sample_"
+                    )
                 )
 
             # ============== TAB 6: Output History ==============
@@ -5784,7 +5803,7 @@ def create_ui():
                             interactive=False,
                             max_lines=10
                         )
-                        delete_output_btn   = gr.Button("Delete", size="sm", variant="primary")
+                        delete_output_btn   = gr.Button("Delete", size="sm")
 
                 def delete_output_file(action, selected_file):
                     # Ignore empty calls or actions not for this callback
@@ -5793,7 +5812,7 @@ def create_ui():
 
                     # If cancelled, return without doing anything
                     if "cancel" in action:
-                        return gr.update(), gr.update(), gr.update(value="❌ Deletion cancelled")
+                        return gr.update(), gr.update(), gr.update(value="Deletion cancelled")
 
                     # Only process confirm actions
                     if "confirm" not in action:
@@ -5816,7 +5835,7 @@ def create_ui():
                             deleted.append("text")
                         # Refresh dropdown
                         choices = get_output_files()
-                        msg = f"✅ Deleted: {audio_path.name} ({', '.join(deleted)})" if deleted else "❌ Files not found"
+                        msg = f"Deleted: {audio_path.name} ({', '.join(deleted)})" if deleted else "❌ Files not found"
 
                         # Refresh list and clear selection
                         return gr.update(choices=choices, value=None), gr.update(value=None), gr.update(value=msg)
@@ -5883,7 +5902,7 @@ def create_ui():
 
                         with gr.Row():
                             refresh_finetune_btn = gr.Button("Refresh", size="sm", scale=1)
-                            delete_finetune_btn = gr.Button("Delete", size="sm", scale=1, variant="primary")
+                            delete_finetune_btn = gr.Button("Delete", size="sm", scale=1)
 
                         finetune_audio_preview = gr.Audio(
                             label="Audio Preview & Trim",
@@ -6138,19 +6157,9 @@ def create_ui():
 
                         refresh_train_folder_btn = gr.Button("Refresh Datasets", size="sm")
 
-                        gr.Markdown("### Model Configuration")
-
-                        speaker_name_input = gr.Textbox(
-                            label="Speaker Name",
-                            value="speaker",
-                            interactive=True
-                        )
-
-                        gr.Markdown("### Select Reference")
-
                         ref_audio_dropdown = gr.Dropdown(
                             choices=[],
-                            label="Reference Audio",
+                            label="Select Reference Audio Track",
                             info="Select one sample from your dataset as reference",
                             interactive=True
                         )
@@ -6255,17 +6264,102 @@ def create_ui():
                     outputs=[ref_audio_preview]
                 )
 
+                # Create a hidden textbox to store existing models list
+                existing_models_state = gr.State([])
+
+                # Function to show modal with current model list
+                def show_training_modal():
+                    """Fetch current model list and prepare modal."""
+                    existing_models = get_trained_model_names()
+                    return existing_models
+
                 start_training_btn.click(
-                    train_model,
-                    inputs=[
-                        train_folder_dropdown,
-                        speaker_name_input,
-                        ref_audio_dropdown,
-                        batch_size_slider,
-                        learning_rate_slider,
-                        num_epochs_slider,
-                        save_interval_slider
-                    ],
+                    fn=show_training_modal,
+                    inputs=None,
+                    outputs=[existing_models_state],
+                    js="""
+                    (existingModels) => {
+                        const overlay = document.getElementById('input-modal-overlay');
+                        if (!overlay) return existingModels;
+
+                        const titleEl = document.getElementById('input-modal-title');
+                        const messageEl = document.getElementById('input-modal-message');
+                        const inputField = document.getElementById('input-modal-field');
+                        const submitBtn = document.getElementById('input-modal-submit-btn');
+                        const cancelBtn = document.getElementById('input-modal-cancel-btn');
+                        const errorEl = document.getElementById('input-modal-error');
+
+                        if (titleEl) titleEl.textContent = 'Start Training';
+                        if (messageEl) {
+                            messageEl.textContent = 'Enter a name for this trained voice model:';
+                            messageEl.style.display = 'block';
+                        }
+                        if (inputField) {
+                            inputField.placeholder = 'e.g., MyVoice, Female-Narrator, John-Doe';
+                            inputField.value = '';
+                        }
+                        if (submitBtn) {
+                            submitBtn.textContent = 'Start Training';
+                            submitBtn.setAttribute('data-context', 'train_model_');
+                        }
+                        if (cancelBtn) {
+                            cancelBtn.setAttribute('data-context', 'train_model_');
+                        }
+                        if (errorEl) {
+                            errorEl.classList.remove('show');
+                            errorEl.textContent = '';
+                        }
+
+                        // Set up validation with current model list
+                        window.inputModalValidation = (value) => {
+                            if (!value || value.trim().length === 0) {
+                                return 'Please enter a model name';
+                            }
+                            if (existingModels.includes(value.trim())) {
+                                return 'Model "' + value + '" already exists. Please choose a different name.';
+                            }
+                            return null;
+                        };
+
+                        overlay.classList.add('show');
+
+                        // Focus the input field after a brief delay
+                        setTimeout(() => {
+                            if (inputField) {
+                                inputField.focus();
+                                inputField.select();
+                            }
+                        }, 100);
+
+                        return existingModels;
+                    }
+                    """
+                )
+
+                # Handler for training modal submission
+                def handle_train_model_input(input_value, folder, ref_audio, batch_size, lr, epochs, save_interval):
+                    """Process input modal submission for training."""
+                    # Context filtering: only process if this is our context
+                    if not input_value or not input_value.startswith("train_model_"):
+                        return gr.update()
+
+                    # Extract speaker name from context prefix
+                    # Remove context prefix and timestamp
+                    parts = input_value.split("_")
+                    if len(parts) >= 3:
+                        # Context is "train_model_", parts[2:] is the name + timestamp
+                        # Remove the timestamp (last part after the last underscore)
+                        speaker_name = "_".join(parts[2:-1])  # Everything except context and timestamp
+
+                        # Start training with the provided name (validation already done in modal)
+                        return train_model(folder, speaker_name, ref_audio, batch_size, lr, epochs, save_interval)
+
+                    return gr.update()
+
+                input_trigger.change(
+                    handle_train_model_input,
+                    inputs=[input_trigger, train_folder_dropdown, ref_audio_dropdown, batch_size_slider,
+                            learning_rate_slider, num_epochs_slider, save_interval_slider],
                     outputs=[training_status]
                 )
 
@@ -6561,7 +6655,7 @@ def create_ui():
                         _user_config["trained_models_folder"] = trained_models
                         save_config(_user_config)
 
-                        return f"✅ Folder paths updated successfully!\n\nSamples: {new_samples}\nOutput: {new_output}\nDatasets: {new_datasets}\nDownloaded Models: {new_models}\nTrained Models: {new_trained_models}\n\nNote: Restart the app to fully apply changes to all components."
+                        return f"Folder paths updated successfully!\n\nSamples: {new_samples}\nOutput: {new_output}\nDatasets: {new_datasets}\nDownloaded Models: {new_models}\nTrained Models: {new_trained_models}\n\nNote: Restart the app to fully apply changes to all components."
 
                     except Exception as e:
                         return f"❌ Error applying changes: {str(e)}"
@@ -6717,6 +6811,58 @@ def create_ui():
             handle_custom_emotion_input,
             inputs=[input_trigger, custom_emotion_intensity, custom_temperature, custom_repetition_penalty, custom_top_p],
             outputs=[custom_emotion_preset, preset_status]
+        )
+
+        # Handler for save sample input modal
+        def handle_save_sample_input(input_value, audio, transcription):
+            """Process input modal submission for saving sample."""
+            # Context filtering: only process if this is our context
+            if not input_value or not input_value.startswith("save_sample_"):
+                return gr.update(), gr.update(), gr.update()
+
+            # Extract sample name from context prefix
+            parts = input_value.split("_")
+            if len(parts) >= 3:
+                # Format: save_sample_<name>_<timestamp> or save_sample_cancel_<timestamp>
+                if parts[2] == "cancel":
+                    return gr.update(), gr.update(), gr.update()
+                # Everything between save_sample_ and final timestamp
+                sample_name = "_".join(parts[2:-1])
+                status, dropdown1_update, dropdown2_update, _ = save_as_sample(audio, transcription, sample_name)
+                return status, dropdown1_update, dropdown2_update
+
+            return gr.update(), gr.update(), gr.update()
+
+        input_trigger.change(
+            handle_save_sample_input,
+            inputs=[input_trigger, prep_audio_editor, transcription_output],
+            outputs=[save_status, existing_sample_dropdown, sample_dropdown]
+        )
+
+        # Handler for save designed voice input modal
+        def handle_save_design_input(input_value, audio, instruct, lang, seed, text):
+            """Process input modal submission for saving designed voice."""
+            # Context filtering: only process if this is our context
+            if not input_value or not input_value.startswith("save_design_"):
+                return gr.update()
+
+            # Extract design name from context prefix
+            parts = input_value.split("_")
+            if len(parts) >= 3:
+                # Format: save_design_<name>_<timestamp> or save_design_cancel_<timestamp>
+                if parts[2] == "cancel":
+                    return gr.update()
+                # Everything between save_design_ and final timestamp
+                design_name = "_".join(parts[2:-1])
+                status, _ = save_designed_voice(audio, design_name, instruct, lang, seed, text)
+                return status
+
+            return gr.update()
+
+        input_trigger.change(
+            handle_save_design_input,
+            inputs=[input_trigger, design_output_audio, design_instruct_input, design_language, design_seed, design_text_input],
+            outputs=[design_status]
         )
 
         # Refresh emotion dropdowns when tabs are selected

@@ -143,6 +143,9 @@ INPUT_MODAL_HEAD = """
       console.log('Submitting value:', valueToSubmit);
     } else {
       console.log('Action cancelled');
+      overlay.classList.remove('show');
+      inputField.value = '';
+      return; // Exit without triggering anything
     }
 
     overlay.classList.remove('show');
@@ -150,7 +153,7 @@ INPUT_MODAL_HEAD = """
 
     // Get context from button's data attribute
     const context = button ? button.getAttribute('data-context') || '' : '';
-    const prefixedValue = context + (valueToSubmit || 'cancel');
+    const prefixedValue = context + valueToSubmit;
     console.log('Prefixed value:', prefixedValue);
 
     // Find the trigger element
