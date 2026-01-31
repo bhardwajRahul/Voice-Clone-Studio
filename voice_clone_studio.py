@@ -116,16 +116,18 @@ def play_completion_beep():
                     import subprocess
                     subprocess.Popen(["afplay", str(notification_path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 else:
-                    # Linux: Try aplay (ALSA), fallback to paplay (PulseAudio)
+                    # Linux: Try aplay (ALSA), fallback to paplay (PulseAudio), fail silently if neither exists
                     import subprocess
                     try:
                         subprocess.Popen(["aplay", "-q", str(notification_path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     except FileNotFoundError:
-                        subprocess.Popen(["paplay", str(notification_path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except Exception as e:
-                # Fallback to ASCII bell if audio playback fails
-                print(f"⚠ Audio playback failed: {e}", flush=True)
-                print('\a', end='', flush=True)
+                        try:
+                            subprocess.Popen(["paplay", str(notification_path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        except FileNotFoundError:
+                            pass  # No audio player available, fail silently
+            except Exception:
+                # Fail silently for notification beeps
+                pass
         else:
             # Notification file missing, use ASCII bell
             print('\a', end='', flush=True)
