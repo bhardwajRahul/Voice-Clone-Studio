@@ -217,16 +217,9 @@ def train():
             save_path = os.path.join(output_dir, "model.safetensors")
             save_file(state_dict, save_path)
 
-    # Play completion notification
+    # Note: Completion notification is handled by train_model() in main app
     if accelerator.is_main_process:
         print("\n=== Training Complete! ===\n")
-        try:
-            notification_path = Path(__file__).parent.parent / "core_components" / "notification.wav"
-            if notification_path.exists() and platform.system() == "Windows":
-                import winsound
-                winsound.PlaySound(str(notification_path), winsound.SND_FILENAME)
-        except Exception:
-            pass
 
 if __name__ == "__main__":
     train()
