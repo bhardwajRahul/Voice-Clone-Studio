@@ -5,8 +5,25 @@ Provides modular, reusable Gradio components for model parameters and controls.
 This eliminates code duplication across tabs and makes it easy to add support for new models.
 """
 
+from pathlib import Path
 import gradio as gr
 from modules.core_components.emotion_manager import calculate_emotion_values, get_emotion_choices
+
+# Load modal resources from files
+_UI_DIR = Path(__file__).parent
+
+# Confirmation Modal
+CONFIRMATION_MODAL_CSS = (_UI_DIR / 'confirmation_modal.css').read_text(encoding='utf-8')
+CONFIRMATION_MODAL_HEAD = '<script>\n' + (_UI_DIR / 'confirmation_modal.js').read_text(encoding='utf-8') + '\n</script>'
+CONFIRMATION_MODAL_HTML = (_UI_DIR / 'confirmation_modal.html').read_text(encoding='utf-8')
+
+# Input Modal
+INPUT_MODAL_CSS = (_UI_DIR / 'input_modal.css').read_text(encoding='utf-8')
+INPUT_MODAL_HEAD = '<script>\n' + (_UI_DIR / 'input_modal.js').read_text(encoding='utf-8') + '\n</script>'
+INPUT_MODAL_HTML = (_UI_DIR / 'input_modal.html').read_text(encoding='utf-8')
+
+# Import helper functions
+from .modals import show_confirmation_modal_js, show_input_modal_js, create_confirmation_workflow
 
 
 def create_qwen_advanced_params(
@@ -71,14 +88,14 @@ def create_qwen_advanced_params(
                     info="Emotion strength (0=none, 2=extreme)",
                     scale=1
                 )
-            
+
             components['emotion_row'] = emotion_row
 
             # Emotion management buttons
             with gr.Row(visible=emotion_visible) as emotion_buttons_row:
                 components['save_emotion_btn'] = gr.Button("Save", size="sm", scale=1)
                 components['delete_emotion_btn'] = gr.Button("Delete", size="sm", scale=1)
-            
+
             components['emotion_buttons_row'] = emotion_buttons_row
             components['emotion_save_name'] = gr.Textbox(visible=False, value="")
 
@@ -140,7 +157,7 @@ def create_qwen_advanced_params(
     if include_emotion:
         if not shared_state or '_active_emotions' not in shared_state:
             raise ValueError("shared_state with '_active_emotions' key is required when include_emotion=True")
-        
+
         def update_from_emotion(emotion_name, intensity):
             """Update slider values based on selected emotion."""
             # Read current emotions dynamically from shared_state

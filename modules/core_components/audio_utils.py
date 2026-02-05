@@ -33,11 +33,11 @@ def is_audio_file(filepath):
 def extract_audio_from_video(video_path, temp_dir):
     """
     Extract audio from video file using ffmpeg.
-    
+
     Args:
         video_path: Path to video file
         temp_dir: Directory to save extracted audio
-        
+
     Returns:
         str: Path to extracted audio file, or None if failed
     """
@@ -62,7 +62,7 @@ def extract_audio_from_video(video_path, temp_dir):
         ]
 
         result = subprocess.run(cmd, capture_output=True, text=True)
-        
+
         # Check if failed due to permission/path issues
         if result.returncode != 0 and ("Permission denied" in result.stderr or "No such file" in result.stderr):
             print(f"ffmpeg failed writing to {audio_output}: {result.stderr}. Using system temp.")
@@ -98,11 +98,11 @@ def format_time(seconds):
     """Format seconds as MM:SS or HH:MM:SS."""
     if seconds < 0:
         return "0:00"
-    
+
     hours = int(seconds // 3600)
     minutes = int((seconds % 3600) // 60)
     secs = int(seconds % 60)
-    
+
     if hours > 0:
         return f"{hours}:{minutes:02d}:{secs:02d}"
     else:
@@ -112,11 +112,11 @@ def format_time(seconds):
 def normalize_audio(audio_file, temp_dir):
     """
     Normalize audio levels.
-    
+
     Args:
         audio_file: Path to audio file
         temp_dir: Directory to save normalized audio
-        
+
     Returns:
         str: Path to normalized audio file, or original path if failed
     """
@@ -169,11 +169,11 @@ def normalize_audio(audio_file, temp_dir):
 def convert_to_mono(audio_file, temp_dir):
     """
     Convert stereo audio to mono.
-    
+
     Args:
         audio_file: Path to audio file
         temp_dir: Directory to save mono audio
-        
+
     Returns:
         str: Path to mono audio file, or original path if already mono or failed
     """
@@ -189,11 +189,11 @@ def convert_to_mono(audio_file, temp_dir):
         # Check if stereo, if mono return original
         if len(data.shape) > 1 and data.shape[1] > 1:
             mono = np.mean(data, axis=1)
-            
+
             timestamp = datetime.now().strftime('%H%M%S')
             filename = f"mono_{timestamp}.wav"
             temp_path = Path(temp_dir) / filename
-            
+
             try:
                 sf.write(str(temp_path), mono, sr)
             except (PermissionError, OSError) as e:
@@ -201,11 +201,11 @@ def convert_to_mono(audio_file, temp_dir):
                 print(f"[WARN] Could not write to {temp_path} ({e}). Falling back to system temp.")
                 temp_path = Path(tempfile.gettempdir()) / filename
                 sf.write(str(temp_path), mono, sr)
-                
+
             # Force file flush on Windows
             if platform.system() == "Windows":
                 time.sleep(0.1)
-                
+
             return str(temp_path)
         else:
             return audio_file
@@ -218,13 +218,13 @@ def convert_to_mono(audio_file, temp_dir):
 def clean_audio(audio_file, temp_dir, get_deepfilter_model_func, progress_callback=None):
     """
     Clean audio using DeepFilterNet.
-    
+
     Args:
         audio_file: Path to audio file
         temp_dir: Directory to save cleaned audio
         get_deepfilter_model_func: Function that returns (model, state, params) tuple
         progress_callback: Optional progress callback function
-        
+
     Returns:
         str: Path to cleaned audio file, or original path if failed
     """
@@ -238,7 +238,7 @@ def clean_audio(audio_file, temp_dir, get_deepfilter_model_func, progress_callba
     try:
         if progress_callback:
             progress_callback(0.1, desc="Loading Audio Cleaner...")
-        
+
         df_model, df_state, df_params = get_deepfilter_model_func()
 
         # Get sample rate from params or use default
@@ -276,7 +276,7 @@ def clean_audio(audio_file, temp_dir, get_deepfilter_model_func, progress_callba
 
         if progress_callback:
             progress_callback(1.0, desc="Done!")
-        
+
         return str(output_path)
 
     except Exception as e:
@@ -287,19 +287,19 @@ def clean_audio(audio_file, temp_dir, get_deepfilter_model_func, progress_callba
 def save_audio_as_sample(audio_file, transcription, sample_name, samples_dir):
     """
     Save audio and transcription as a new sample.
-    
+
     Args:
         audio_file: Path to audio file
         transcription: Transcription text
         sample_name: Name for the sample
         samples_dir: Directory to save sample
-        
+
     Returns:
         tuple: (status_message, success_bool)
     """
     import re
     import json
-    
+
     if not audio_file:
         return "[ERROR] No audio file to save.", False
 

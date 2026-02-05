@@ -4003,7 +4003,7 @@ def create_ui():
     """Create the Gradio interface."""
 
     # Load custom theme from local theme.json (colors pre-configured with orange)
-    theme = gr.themes.Base.load('modules/core_components/theme.json')
+    theme = gr.themes.Base.load('modules/core_components/ui_components/theme.json')
 
     # Custom CSS for vertical file list
     custom_css = """

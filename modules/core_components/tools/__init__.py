@@ -766,7 +766,7 @@ def run_tool_standalone(TabClass, port=7860, title="Tool - Standalone", extra_sh
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     # Load theme
-    theme_path = Path(__file__).parent.parent / "theme.json"
+    theme_path = Path(__file__).parent.parent / "ui_components" / "theme.json"
     theme = gr.themes.Base.load(str(theme_path)) if theme_path.exists() else None
 
     # Create Gradio app
@@ -805,7 +805,7 @@ def run_tool_standalone(TabClass, port=7860, title="Tool - Standalone", extra_sh
             confirm_trigger=confirm_trigger,
             input_trigger=input_trigger
         )
-
+        
         # Add tool-specific shared_state entries
         if extra_shared_state:
             shared_state.update(extra_shared_state)
@@ -827,7 +827,6 @@ def run_tool_standalone(TabClass, port=7860, title="Tool - Standalone", extra_sh
         head=CONFIRMATION_MODAL_HEAD + INPUT_MODAL_HEAD,
         server_port=port,
         server_name="127.0.0.1",
-        share=False,
         inbrowser=False,
         allowed_paths=[str(SAMPLES_DIR), str(OUTPUT_DIR), str(DATASETS_DIR)]
     )

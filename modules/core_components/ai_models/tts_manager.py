@@ -306,7 +306,7 @@ class TTSManager:
 
         return audio_data, sr
 
-    def generate_custom_voice(self, text: str, language: str, speaker: str, instruct: str = None, 
+    def generate_custom_voice(self, text: str, language: str, speaker: str, instruct: str = None,
                               model_size: str = "1.7B", seed: int = -1,
                               do_sample: bool = True, temperature: float = 0.9, top_k: int = 50,
                               top_p: float = 1.0, repetition_penalty: float = 1.05,
@@ -370,7 +370,7 @@ class TTSManager:
 
         return audio_data, sr
 
-    def generate_with_trained_model(self, text: str, language: str, speaker_name: str, 
+    def generate_with_trained_model(self, text: str, language: str, speaker_name: str,
                                     checkpoint_path: str, instruct: str = None, seed: int = -1,
                                     do_sample: bool = True, temperature: float = 0.9, top_k: int = 50,
                                     top_p: float = 1.0, repetition_penalty: float = 1.05,

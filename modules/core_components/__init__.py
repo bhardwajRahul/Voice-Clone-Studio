@@ -1,13 +1,10 @@
 """Core components package for Voice Clone Studio"""
 
-from .confirmation_modal import (
+from .ui_components import (
     CONFIRMATION_MODAL_CSS,
     CONFIRMATION_MODAL_HEAD,
     CONFIRMATION_MODAL_HTML,
-    show_confirmation_modal_js
-)
-
-from .input_modal import (
+    show_confirmation_modal_js,
     INPUT_MODAL_CSS,
     INPUT_MODAL_HEAD,
     INPUT_MODAL_HTML,

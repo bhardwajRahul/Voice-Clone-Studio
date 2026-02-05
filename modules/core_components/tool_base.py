@@ -20,30 +20,30 @@ class TabConfig:
 
 class Tab:
     """Base class for tab modules."""
-    
+
     config: TabConfig
-    
+
     @classmethod
     def create_tab(cls, shared_state: Dict[str, Any]):
         """
         Create and return the tab UI.
-        
+
         Args:
             shared_state: Dictionary with shared globals
                 - 'active_emotions': Active emotions dict
                 - 'user_config': User configuration
                 - 'get_*': Helper functions
-        
+
         Returns:
             dict with all component references for event wiring
         """
         raise NotImplementedError
-    
+
     @classmethod
     def setup_events(cls, components: Dict[str, Any], shared_state: Dict[str, Any]):
         """
         Wire up all event handlers for this tab.
-        
+
         Args:
             components: Component references returned by create_tab()
             shared_state: Dictionary with shared globals

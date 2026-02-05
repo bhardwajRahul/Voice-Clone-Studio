@@ -39,37 +39,26 @@ class OutputHistoryTab(Tab):
 
         # Helper function to get output files
         def get_output_files():
-            """Get list of generated output files with date/time.
-            
+            """Get list of generated output files.
+
             Returns:
-                List of [filename, date, time] for dataframe
+                List of filenames
             """
-            from datetime import datetime
             if not OUTPUT_DIR or not OUTPUT_DIR.exists():
                 return []
             files = sorted(OUTPUT_DIR.glob("*.wav"), key=lambda x: x.stat().st_mtime, reverse=True)
-            
-            # Format as [filename, date, time]
-            result = []
-            for f in files:
-                mtime = datetime.fromtimestamp(f.stat().st_mtime)
-                result.append([f.name, mtime.strftime('%Y-%m-%d'), mtime.strftime('%H:%M:%S')])
-            return result
+            return [f.name for f in files]
 
         with gr.TabItem("Output History"):
             gr.Markdown("Browse and manage previously generated audio files")
             with gr.Row():
                 with gr.Column(scale=1):
                     with gr.Column(scale=1, elem_id="output-files-container"):
-                        components['output_dropdown'] = gr.Dataframe(
-                            value=get_output_files(),
-                            headers=["Filename", "Date", "Time"],
-                            interactive=False,
-                            elem_id="output-files-group",
-                            row_count=(15, "fixed"),
-                            col_count=(3, "fixed"),
-                            column_widths=["auto", 150, 150],
-                            wrap=True
+                        components['output_dropdown'] = gr.Radio(
+                            choices=get_output_files(),
+                            show_label=False,
+                            interactive=True,
+                            elem_id="output-files-group"
                         )
                     components['refresh_outputs_btn'] = gr.Button("Refresh", size="sm")
 
@@ -83,6 +72,11 @@ class OutputHistoryTab(Tab):
                         label="Generation Info",
                         interactive=False,
                         max_lines=15
+                    )
+                    components['delete_status'] = gr.Textbox(
+                        label="Status",
+                        interactive=False,
+                        max_lines=1
                     )
                     # Hidden textbox to store selected filename for delete
                     components['selected_file'] = gr.Textbox(visible=False)
@@ -100,118 +94,61 @@ class OutputHistoryTab(Tab):
         confirm_trigger = shared_state.get('confirm_trigger')
 
         # Local helper functions
+        # Local helper functions
         def get_output_files():
-            """Get list of generated output files with date/time.
-            
+            """Get list of generated output files.
+
             Returns:
-                List of [filename, date, time] for dataframe
+                List of filenames
             """
-            from datetime import datetime
             if not OUTPUT_DIR or not OUTPUT_DIR.exists():
                 return []
             files = sorted(OUTPUT_DIR.glob("*.wav"), key=lambda x: x.stat().st_mtime, reverse=True)
-            
-            # Format as [filename, date, time]
-            result = []
-            for f in files:
-                mtime = datetime.fromtimestamp(f.stat().st_mtime)
-                result.append([f.name, mtime.strftime('%Y-%m-%d'), mtime.strftime('%H:%M:%S')])
-            return result
+            return [f.name for f in files]
 
         def refresh_outputs():
             """Refresh the output file list."""
-            return gr.update(value=get_output_files())
+            return gr.update(choices=get_output_files(), value=None)
 
-        def sort_by_name(sort_state):
-            """Toggle sort by name: normal -> reversed -> back to date."""
-            clicks = sort_state['clicks']['name']
-
-            if clicks == 0:
-                # First click: sort by name ascending
-                sort_state['by'] = 'name'
-                sort_state['reverse'] = False
-                sort_state['clicks']['name'] = 1
-                sort_state['clicks']['date'] = 0
-            elif clicks == 1:
-                # Second click: sort by name descending
-                sort_state['by'] = 'name'
-                sort_state['reverse'] = True
-                sort_state['clicks']['name'] = 2
-            else:
-                # Third click: revert to default (date descending)
-                sort_state['by'] = 'date'
-                sort_state['reverse'] = True
-                sort_state['clicks']['name'] = 0
-                sort_state['clicks']['date'] = 0
-
-            return sort_state, gr.update(value=get_output_files(sort_state['by'], sort_state['reverse']))
-
-        def sort_by_date(sort_state):
-            """Toggle sort by date: normal -> reversed -> back to normal."""
-            clicks = sort_state['clicks']['date']
-
-            if clicks == 0:
-                # First click: sort by date ascending (oldest first)
-                sort_state['by'] = 'date'
-                sort_state['reverse'] = False
-                sort_state['clicks']['date'] = 1
-                sort_state['clicks']['name'] = 0
-            elif clicks == 1:
-                # Second click: sort by date descending (newest first)
-                sort_state['by'] = 'date'
-                sort_state['reverse'] = True
-                sort_state['clicks']['date'] = 2
-            else:
-                # Third click: revert to default (date descending)
-                sort_state['by'] = 'date'
-                sort_state['reverse'] = True
-                sort_state['clicks']['date'] = 0
-                sort_state['clicks']['name'] = 0
-
-            return sort_state, gr.update(value=get_output_files(sort_state['by'], sort_state['reverse']))
-
-        def load_output_audio(evt: gr.SelectData):
+        def load_output_audio(selected_file):
             """Load a selected output file for playback and show metadata."""
-            if not evt or not evt.value:
-                return None, ""
-            
-            # evt.value contains the cell value, evt.index contains [row, col]
-            # We need the filename from column 0 of the selected row
-            file_path = evt.value if evt.index[1] == 0 else None
-            if not file_path:
-                return None, ""
-            
-            file_path = OUTPUT_DIR / file_path
+            if not selected_file:
+                return None, "", ""
+
+            file_path = OUTPUT_DIR / selected_file
 
             if file_path.exists():
                 metadata_file = file_path.with_suffix(".txt")
                 if metadata_file.exists():
                     try:
                         metadata = metadata_file.read_text(encoding="utf-8")
-                        return str(file_path), metadata, file_path.name
+                        return str(file_path), metadata, selected_file
                     except:
                         pass
-                return str(file_path), "No metadata available", file_path.name
+                return str(file_path), "No metadata available", selected_file
             return None, "", ""
 
         def delete_output_file(action, selected_file):
             """Delete output file and metadata."""
+            # Ignore empty calls or wrong context
             if not action or not action.strip() or not action.startswith("output_"):
-                return gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(), ""
 
+            # Handle cancel
             if "cancel" in action:
-                return gr.update(), gr.update(), gr.update()
+                return "Deletion cancelled", gr.update(), gr.update(), ""
 
+            # Only process confirm
             if "confirm" not in action:
-                return gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(), ""
+
+            if not selected_file:
+                return "[ERROR] No file selected", gr.update(), None, ""
 
             try:
-                if not selected_file:
-                    return gr.update(), None, "[ERROR] No file selected"
-                
                 audio_path = OUTPUT_DIR / selected_file
-
                 txt_path = audio_path.with_suffix(".txt")
+
                 deleted = []
                 if audio_path.exists():
                     audio_path.unlink()
@@ -222,11 +159,11 @@ class OutputHistoryTab(Tab):
 
                 updated_list = get_output_files()
                 msg = f"Deleted: {audio_path.name} ({', '.join(deleted)})" if deleted else "[ERROR] Files not found"
-                return gr.update(value=updated_list), None, msg
+                return msg, gr.update(choices=updated_list, value=None), None, ""
             except Exception as e:
-                return gr.update(), None, f"[ERROR] Error: {str(e)}"
+                return f"[ERROR] Error: {str(e)}", gr.update(), None, ""
 
-        # Show modal on delete button click (only if modal available)
+        # Show modal on delete button choices=updated_list, value=Noneal available)
         if show_confirmation_modal_js and confirm_trigger:
             components['delete_output_btn'].click(
                 fn=None,
@@ -242,7 +179,7 @@ class OutputHistoryTab(Tab):
             confirm_trigger.change(
                 delete_output_file,
                 inputs=[confirm_trigger, components['selected_file']],
-                outputs=[components['output_dropdown'], components['history_audio'], components['history_metadata']]
+                outputs=[components['delete_status'], components['output_dropdown'], components['history_audio'], components['selected_file']]
             )
 
         # Refresh button
@@ -251,10 +188,10 @@ class OutputHistoryTab(Tab):
             outputs=[components['output_dropdown']]
         )
 
-        # Load on dataframe selection
-        components['output_dropdown'].select(
+        # Load on dropdown change
+        components['output_dropdown'].change(
             load_output_audio,
-            inputs=None,
+            inputs=[components['output_dropdown']],
             outputs=[components['history_audio'], components['history_metadata'], components['selected_file']]
         )
 
