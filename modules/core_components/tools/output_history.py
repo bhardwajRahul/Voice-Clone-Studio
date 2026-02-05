@@ -15,23 +15,23 @@ if __name__ == "__main__":
 
 import gradio as gr
 from pathlib import Path
-from modules.core_components.tool_base import Tab, TabConfig
+from modules.core_components.tool_base import Tool, ToolConfig
 
 
-class OutputHistoryTab(Tab):
-    """Output History tab implementation."""
+class OutputHistoryTool(Tool):
+    """Output History tool implementation."""
 
-    config = TabConfig(
+    config = ToolConfig(
         name="Output History",
-        module_name="tab_output_history",
+        module_name="tool_output_history",
         description="Browse and manage generated audio files",
         enabled=True,
         category="utility"
     )
 
     @classmethod
-    def create_tab(cls, shared_state):
-        """Create Output History tab UI."""
+    def create_tool(cls, shared_state):
+        """Create Output History tool UI."""
         components = {}
 
         # Get OUTPUT_DIR from shared_state
@@ -197,10 +197,10 @@ class OutputHistoryTab(Tab):
 
 
 # Export for registry
-get_tab_class = lambda: OutputHistoryTab
+get_tool_class = lambda: OutputHistoryTool
 
 
 # Standalone testing
 if __name__ == "__main__":
     from modules.core_components.tools import run_tool_standalone
-    run_tool_standalone(OutputHistoryTab, port=7868, title="Output History - Standalone")
+    run_tool_standalone(OutputHistoryTool, port=7868, title="Output History - Standalone")

@@ -15,23 +15,23 @@ if __name__ == "__main__":
 import gradio as gr
 import re
 from pathlib import Path
-from modules.core_components.tool_base import Tab, TabConfig
+from modules.core_components.tool_base import Tool, ToolConfig
 
 
-class PrepSamplesTab(Tab):
+class PrepSamplesTool(Tool):
     """Prep Samples tab implementation with robust audio handling."""
 
-    config = TabConfig(
+    config = ToolConfig(
         name="Prep Samples",
-        module_name="tab_prep_samples",
+        module_name="tool_prep_samples",
         description="Prepare and manage voice samples",
         enabled=True,
         category="preparation"
     )
 
     @classmethod
-    def create_tab(cls, shared_state):
-        """Create Prep Samples tab UI."""
+    def create_tool(cls, shared_state):
+        """Create Prep Samples tool UI."""
         components = {}
 
         # Get helper functions and config
@@ -41,119 +41,119 @@ class PrepSamplesTab(Tab):
         WHISPER_AVAILABLE = shared_state['WHISPER_AVAILABLE']
         DEEPFILTER_AVAILABLE = shared_state['DEEPFILTER_AVAILABLE']
 
-        gr.Markdown("Prepare audio samples for voice cloning")
-        
-        with gr.Row():
-            # Left column - Existing samples browser
-            with gr.Column(scale=1):
-                gr.Markdown("### Existing Samples")
+        with gr.TabItem("Prep Samples"):
+            gr.Markdown("Prepare audio samples for voice cloning")
+            with gr.Row():
+                # Left column - Existing samples browser
+                with gr.Column(scale=1):
+                    gr.Markdown("### Existing Samples")
 
-                existing_sample_choices = get_sample_choices()
-                components['existing_sample_dropdown'] = gr.Dropdown(
-                    choices=existing_sample_choices,
-                    value=existing_sample_choices[0] if existing_sample_choices else None,
-                    label="Browse Samples",
-                    info="Select a sample to preview or edit"
-                )
-
-                with gr.Row():
-                    components['preview_sample_btn'] = gr.Button("Preview Sample", size="sm")
-                    components['refresh_preview_btn'] = gr.Button("Refresh", size="sm")
-                    components['load_sample_btn'] = gr.Button("Load to Editor", size="sm")
-
-                with gr.Row():
-                    components['clear_cache_btn'] = gr.Button("Clear Cache", size="sm")
-                    components['delete_sample_btn'] = gr.Button("Delete", size="sm", variant="stop")
-
-                components['existing_sample_audio'] = gr.Audio(
-                    label="Sample Preview",
-                    type="filepath",
-                    interactive=False
-                )
-
-                components['existing_sample_text'] = gr.Textbox(
-                    label="Sample Text",
-                    max_lines=10,
-                    interactive=False
-                )
-
-                components['existing_sample_info'] = gr.Textbox(
-                    label="Info",
-                    interactive=False,
-                    lines=3
-                )
-
-                # Transcription settings
-                gr.Markdown("### Transcription Settings")
-                
-                with gr.Row():
-                    components['whisper_language'] = gr.Dropdown(
-                        choices=["Auto-detect"] + LANGUAGES[1:],
-                        value=_user_config.get("whisper_language", "Auto-detect"),
-                        label="Language",
+                    existing_sample_choices = get_sample_choices()
+                    components['existing_sample_dropdown'] = gr.Dropdown(
+                        choices=existing_sample_choices,
+                        value=existing_sample_choices[0] if existing_sample_choices else None,
+                        label="Browse Samples",
+                        info="Select a sample to preview or edit"
                     )
 
-                    available_models = ['VibeVoice ASR']
-                    if WHISPER_AVAILABLE:
-                        available_models.insert(0, 'Whisper')
+                    with gr.Row():
+                        components['preview_sample_btn'] = gr.Button("Preview Sample", size="sm")
+                        components['refresh_preview_btn'] = gr.Button("Refresh", size="sm")
+                        components['load_sample_btn'] = gr.Button("Load to Editor", size="sm")
 
-                    default_model = _user_config.get("transcribe_model", "Whisper")
-                    if default_model not in available_models:
-                        default_model = available_models[0]
+                    with gr.Row():
+                        components['clear_cache_btn'] = gr.Button("Clear Cache", size="sm")
+                        components['delete_sample_btn'] = gr.Button("Delete", size="sm", variant="stop")
 
-                    components['transcribe_model'] = gr.Dropdown(
-                        choices=available_models,
-                        value=default_model,
-                        label="Model",
+                    components['existing_sample_audio'] = gr.Audio(
+                        label="Sample Preview",
+                        type="filepath",
+                        interactive=False
                     )
 
-            # Right column - Audio/Video editing
-            with gr.Column(scale=2):
-                gr.Markdown("### Edit Audio/Video")
+                    components['existing_sample_text'] = gr.Textbox(
+                        label="Sample Text",
+                        max_lines=10,
+                        interactive=False
+                    )
 
-                components['prep_file_input'] = gr.File(
-                    label="Audio or Video File",
-                    type="filepath",
-                    file_types=["audio", "video"],
-                    interactive=True
-                )
+                    components['existing_sample_info'] = gr.Textbox(
+                        label="Info",
+                        interactive=False,
+                        lines=3
+                    )
 
-                components['prep_audio_editor'] = gr.Audio(
-                    label="Audio Editor (Use Trim icon ✂️ to edit)",
-                    type="filepath",
-                    interactive=True,
-                    visible=False
-                )
+                    # Transcription settings
+                    gr.Markdown("### Transcription Settings")
 
-                with gr.Row():
-                    components['clear_btn'] = gr.Button("Clear", scale=1, size="sm")
-                    components['clean_btn'] = gr.Button("AI Denoise", scale=2, size="sm", 
-                                                        variant="secondary", visible=DEEPFILTER_AVAILABLE)
-                    components['normalize_btn'] = gr.Button("Normalize Volume", scale=2, size="sm")
-                    components['mono_btn'] = gr.Button("Convert to Mono", scale=2, size="sm")
+                    with gr.Row():
+                        components['whisper_language'] = gr.Dropdown(
+                            choices=["Auto-detect"] + LANGUAGES[1:],
+                            value=_user_config.get("whisper_language", "Auto-detect"),
+                            label="Language",
+                        )
 
-                components['prep_audio_info'] = gr.Textbox(
-                    label="Audio Info",
-                    interactive=False,
-                    lines=2
-                )
-                
-                gr.Markdown("### Transcription / Reference Text")
-                components['transcription_output'] = gr.Textbox(
-                    label="Text",
-                    lines=4,
-                    max_lines=10,
-                    interactive=True,
-                    placeholder="Transcription will appear here, or enter/edit text manually..."
-                )
+                        available_models = ['VibeVoice ASR']
+                        if WHISPER_AVAILABLE:
+                            available_models.insert(0, 'Whisper')
 
-                with gr.Row():
-                    components['transcribe_btn'] = gr.Button("Transcribe Audio", variant="primary")
-                    components['save_sample_btn'] = gr.Button("Save Sample", variant="primary")
+                        default_model = _user_config.get("transcribe_model", "Whisper")
+                        if default_model not in available_models:
+                            default_model = available_models[0]
 
-                components['save_status'] = gr.Textbox(label="Status", interactive=False, lines=2)
+                        components['transcribe_model'] = gr.Dropdown(
+                            choices=available_models,
+                            value=default_model,
+                            label="Model",
+                        )
 
-        return components
+                # Right column - Audio/Video editing
+                with gr.Column(scale=2):
+                    gr.Markdown("### Edit Audio/Video")
+
+                    components['prep_file_input'] = gr.File(
+                        label="Audio or Video File",
+                        type="filepath",
+                        file_types=["audio", "video"],
+                        interactive=True
+                    )
+
+                    components['prep_audio_editor'] = gr.Audio(
+                        label="Audio Editor (Use Trim icon ✂️ to edit)",
+                        type="filepath",
+                        interactive=True,
+                        visible=False
+                    )
+
+                    with gr.Row():
+                        components['clear_btn'] = gr.Button("Clear", scale=1, size="sm")
+                        components['clean_btn'] = gr.Button("AI Denoise", scale=2, size="sm",
+                                                            variant="secondary", visible=DEEPFILTER_AVAILABLE)
+                        components['normalize_btn'] = gr.Button("Normalize Volume", scale=2, size="sm")
+                        components['mono_btn'] = gr.Button("Convert to Mono", scale=2, size="sm")
+
+                    components['prep_audio_info'] = gr.Textbox(
+                        label="Audio Info",
+                        interactive=False,
+                        lines=2
+                    )
+
+                    gr.Markdown("### Transcription / Reference Text")
+                    components['transcription_output'] = gr.Textbox(
+                        label="Text",
+                        lines=4,
+                        max_lines=10,
+                        interactive=True,
+                        placeholder="Transcription will appear here, or enter/edit text manually..."
+                    )
+
+                    with gr.Row():
+                        components['transcribe_btn'] = gr.Button("Transcribe Audio", variant="primary")
+                        components['save_sample_btn'] = gr.Button("Save Sample", variant="primary")
+
+                    components['save_status'] = gr.Textbox(label="Status", interactive=False, lines=2)
+
+            return components
 
     @classmethod
     def setup_events(cls, components, shared_state):
@@ -173,7 +173,7 @@ class PrepSamplesTab(Tab):
         TEMP_DIR = shared_state['TEMP_DIR']
         SAMPLES_DIR = shared_state['SAMPLES_DIR']
         WHISPER_AVAILABLE = shared_state['WHISPER_AVAILABLE']
-        
+
         # Audio utility functions from shared_state
         is_audio_file = shared_state['is_audio_file']
         is_video_file = shared_state['is_video_file']
@@ -184,7 +184,7 @@ class PrepSamplesTab(Tab):
         convert_to_mono = shared_state['convert_to_mono']
         clean_audio = shared_state['clean_audio']
         save_as_sample = shared_state['save_as_sample']
-        
+
         # ASR/model getters
         get_whisper_model = shared_state.get('get_whisper_model')
         get_vibe_voice_model = shared_state.get('get_vibe_voice_model')
@@ -223,15 +223,15 @@ class PrepSamplesTab(Tab):
             """Load sample into the working audio editor."""
             if not sample_name:
                 return None, None, "", "No sample selected", gr.update(visible=False)
-            
+
             audio_path, ref_text, info = load_sample_details(sample_name)
-            
+
             if audio_path:
                 # Format simple info for editor
                 duration = get_audio_duration(audio_path)
                 editor_info = f"Duration: {format_time(duration)} ({duration:.2f}s)"
                 return audio_path, audio_path, ref_text, editor_info, gr.update(visible=True)
-            
+
             return None, None, "", "Sample not found", gr.update(visible=False)
 
         def load_existing_sample_handler(sample_name):
@@ -265,7 +265,7 @@ class PrepSamplesTab(Tab):
 
             try:
                 import os
-                
+
                 # Delete wav file
                 wav_path = SAMPLES_DIR / f"{sample_name}.wav"
                 if wav_path.exists():
@@ -302,7 +302,7 @@ class PrepSamplesTab(Tab):
             try:
                 import os
                 deleted = []
-                
+
                 for model_size in ["0.6B", "1.7B"]:
                     cache_path = get_prompt_cache_path(sample_name, model_size)
                     if cache_path.exists():
@@ -339,7 +339,7 @@ class PrepSamplesTab(Tab):
             try:
                 if transcribe_model == "VibeVoice ASR":
                     progress(0.2, desc="Loading VibeVoice ASR...")
-                    
+
                     if not get_vibe_voice_model:
                         return "[ERROR] VibeVoice ASR not available"
 
@@ -352,7 +352,7 @@ class PrepSamplesTab(Tab):
                         return "[ERROR] Whisper not available. Use VibeVoice ASR instead."
 
                     progress(0.2, desc="Loading Whisper...")
-                    
+
                     if not get_whisper_model:
                         return "[ERROR] Whisper not available"
 
@@ -384,7 +384,7 @@ class PrepSamplesTab(Tab):
 
                 if play_completion_beep:
                     play_completion_beep()
-                
+
                 return transcription
 
             except Exception as e:
@@ -401,7 +401,7 @@ class PrepSamplesTab(Tab):
             if len(parts) >= 3:
                 if parts[2] == "cancel":
                     return gr.update(), gr.update(), gr.update()
-                
+
                 sample_name = "_".join(parts[2:-1])
                 status, dropdown1, dropdown2, _ = save_as_sample(audio, transcription, sample_name)
                 return status, dropdown1, dropdown2
@@ -409,13 +409,13 @@ class PrepSamplesTab(Tab):
             return gr.update(), gr.update(), gr.update()
 
         # Wire up events
-        
+
         # Load sample to editor
         components['load_sample_btn'].click(
             load_sample_to_editor,
             inputs=[components['existing_sample_dropdown']],
-            outputs=[components['prep_file_input'], components['prep_audio_editor'], 
-                     components['transcription_output'], components['prep_audio_info'], 
+            outputs=[components['prep_file_input'], components['prep_audio_editor'],
+                     components['transcription_output'], components['prep_audio_info'],
                      components['prep_audio_editor']]
         )
 
@@ -423,7 +423,7 @@ class PrepSamplesTab(Tab):
         components['existing_sample_dropdown'].change(
             load_existing_sample_handler,
             inputs=[components['existing_sample_dropdown']],
-            outputs=[components['existing_sample_audio'], components['existing_sample_text'], 
+            outputs=[components['existing_sample_audio'], components['existing_sample_text'],
                      components['existing_sample_info']]
         )
 
@@ -431,7 +431,7 @@ class PrepSamplesTab(Tab):
         components['preview_sample_btn'].click(
             load_existing_sample_handler,
             inputs=[components['existing_sample_dropdown']],
-            outputs=[components['existing_sample_audio'], components['existing_sample_text'], 
+            outputs=[components['existing_sample_audio'], components['existing_sample_text'],
                      components['existing_sample_info']]
         )
 
@@ -485,7 +485,7 @@ class PrepSamplesTab(Tab):
         # Clear button
         components['clear_btn'].click(
             lambda: (None, None, ""),
-            outputs=[components['prep_file_input'], components['prep_audio_editor'], 
+            outputs=[components['prep_file_input'], components['prep_audio_editor'],
                      components['prep_audio_info']]
         )
 
@@ -513,7 +513,7 @@ class PrepSamplesTab(Tab):
         # Transcribe
         components['transcribe_btn'].click(
             transcribe_audio_handler,
-            inputs=[components['prep_audio_editor'], components['whisper_language'], 
+            inputs=[components['prep_audio_editor'], components['whisper_language'],
                     components['transcribe_model']],
             outputs=[components['transcription_output']]
         )
@@ -553,10 +553,10 @@ class PrepSamplesTab(Tab):
 
 
 # Export for tab registry
-get_tab_class = lambda: PrepSamplesTab
+get_tool_class = lambda: PrepSamplesTool
 
 
 if __name__ == "__main__":
     """Standalone testing of Prep Samples tool."""
-    from modules.core_components.tool_standalone import run_tool_standalone
-    run_tool_standalone(PrepSamplesTab, port=7865, title="Prep Samples - Standalone")
+    from modules.core_components.tools import run_tool_standalone
+    run_tool_standalone(PrepSamplesTool, port=7865, title="Prep Samples - Standalone")

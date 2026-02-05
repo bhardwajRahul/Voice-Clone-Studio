@@ -61,12 +61,12 @@ Create `modules/core_components/tools/my_feature.py`:
 
 ```python
 import gradio as gr
-from modules.core_components.tools.base import Tab, TabConfig
+from modules.core_components.tools.base import Tool, ToolConfig
 
-class MyFeatureTab(Tab):
+class MyFeatureTool(Tool):
     """My Feature tool implementation."""
     
-    config = TabConfig(
+    config = ToolConfig(
         name="My Feature",
         module_name="my_feature",
         description="Description of my feature",
@@ -75,7 +75,7 @@ class MyFeatureTab(Tab):
     )
     
     @classmethod
-    def create_tab(cls, shared_state):
+    def create_tool(cls, shared_state):
         """Create the tool UI. Return dict of component references."""
         components = {}
         
@@ -103,7 +103,7 @@ class MyFeatureTab(Tab):
 
 
 # Export for registry
-get_tab_class = lambda: MyFeatureTab
+get_tool_class = lambda: MyFeatureTab
 ```
 
 ### 2. Register the Tool

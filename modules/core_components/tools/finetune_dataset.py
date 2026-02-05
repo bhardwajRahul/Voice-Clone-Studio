@@ -1,29 +1,29 @@
 """
-Finetune Dataset Tab
+Finetune Dataset Tool
 
 Manage and prepare finetuning datasets.
 """
 
 import gradio as gr
 from textwrap import dedent
-from modules.core_components.tool_base import Tab, TabConfig
+from modules.core_components.tool_base import Tool, ToolConfig
 # format_help_html comes from shared_state
 
 
-class FinetuneDatasetTab(Tab):
-    """Finetune Dataset tab implementation."""
+class FinetuneDatasetTool(Tool):
+    """Finetune Dataset Tool implementation."""
 
-    config = TabConfig(
+    config = ToolConfig(
         name="Finetune Dataset",
-        module_name="tab_finetune_dataset",
+        module_name="tool_finetune_dataset",
         description="Manage training datasets",
         enabled=True,
         category="preparation"
     )
 
     @classmethod
-    def create_tab(cls, shared_state):
-        """Create Finetune Dataset tab UI."""
+    def create_tool(cls, shared_state):
+        """Create Finetune Dataset tool UI."""
         components = {}
 
         # Get helper functions and config
@@ -329,4 +329,9 @@ class FinetuneDatasetTab(Tab):
 
 
 # Export for tab registry
-get_tab_class = lambda: FinetuneDatasetTab
+get_tool_class = lambda: FinetuneDatasetTool
+
+if __name__ == "__main__":
+    """Standalone testing of Finetune Dataset tool."""
+    from modules.core_components.tools import run_tool_standalone
+    run_tool_standalone(FinetuneDatasetTool, port=7864, title="Finetune Dataset - Standalone")

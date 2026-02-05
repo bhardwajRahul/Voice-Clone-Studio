@@ -20,23 +20,23 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 
-from modules.core_components.tool_base import Tab, TabConfig
+from modules.core_components.tool_base import Tool, ToolConfig
 from modules.core_components.ai_models.tts_manager import get_tts_manager
 
-class VoiceCloneTab(Tab):
-    """Voice Clone tab implementation."""
+class VoiceCloneTool(Tool):
+    """Voice Clone tool implementation."""
 
-    config = TabConfig(
+    config = ToolConfig(
         name="Voice Clone",
-        module_name="tab_voice_clone",
+        module_name="tool_voice_clone",
         description="Clone voices from voice samples",
         enabled=True,
         category="generation"
     )
 
     @classmethod
-    def create_tab(cls, shared_state):
-        """Create Voice Clone tab UI."""
+    def create_tool(cls, shared_state):
+        """Create Voice Clone tool UI."""
         components = {}
 
         # Get helper functions and config
@@ -580,15 +580,15 @@ class VoiceCloneTab(Tab):
             on_tab_select,
             inputs=[components['sample_dropdown']],
             outputs=[components['qwen_emotion_preset'], components['sample_audio'],
-                    components['sample_text'], components['sample_info']]
+                     components['sample_text'], components['sample_info']]
         )
 
 
 # Export for tab registry
-get_tab_class = lambda: VoiceCloneTab
+get_tool_class = lambda: VoiceCloneTool
 
 
 if __name__ == "__main__":
     """Standalone testing of Voice Clone tool."""
     from modules.core_components.tools import run_tool_standalone
-    run_tool_standalone(VoiceCloneTab, port=7862, title="Voice Clone - Standalone")
+    run_tool_standalone(VoiceCloneTool, port=7862, title="Voice Clone - Standalone")

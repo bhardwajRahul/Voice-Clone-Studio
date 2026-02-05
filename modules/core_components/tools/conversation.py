@@ -20,24 +20,24 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 
-from modules.core_components.tool_base import Tab, TabConfig
+from modules.core_components.tool_base import Tool, ToolConfig
 from modules.core_components.ai_models.tts_manager import get_tts_manager
 
 
-class ConversationTab(Tab):
-    """Conversation tab implementation."""
+class ConversationTool(Tool):
+    """Conversation tool implementation."""
 
-    config = TabConfig(
+    config = ToolConfig(
         name="Conversation",
-        module_name="tab_conversation",
+        module_name="tool_conversation",
         description="Create multi-speaker conversations",
         enabled=True,
         category="generation"
     )
 
     @classmethod
-    def create_tab(cls, shared_state):
-        """Create Conversation tab UI."""
+    def create_tool(cls, shared_state):
+        """Create Conversation tool UI."""
         components = {}
 
         # Get helper functions and config
@@ -61,368 +61,369 @@ class ConversationTab(Tab):
         is_qwen_base = initial_conv_model == "Qwen Base"
         is_qwen_custom = initial_conv_model == "Qwen CustomVoice"
 
-        components['conv_model_type'] = gr.Radio(
-            choices=["VibeVoice", "Qwen Base", "Qwen CustomVoice"],
-            value=initial_conv_model,
-            show_label=False,
-            container=False
-        )
+        with gr.TabItem("Conversation"):
+            components['conv_model_type'] = gr.Radio(
+                choices=["VibeVoice", "Qwen Base", "Qwen CustomVoice"],
+                value=initial_conv_model,
+                show_label=False,
+                container=False
+            )
 
-        # Get sample choices once for all dropdowns
-        conversation_available_samples = get_sample_choices()
-        conversation_first_sample = conversation_available_samples[0] if conversation_available_samples else None
+            # Get sample choices once for all dropdowns
+            conversation_available_samples = get_sample_choices()
+            conversation_first_sample = conversation_available_samples[0] if conversation_available_samples else None
 
-        with gr.Row():
-            # Left - Script input and model-specific controls
-            with gr.Column(scale=2):
-                gr.Markdown("### Conversation Script")
+            with gr.Row():
+                # Left - Script input and model-specific controls
+                with gr.Column(scale=2):
+                    gr.Markdown("### Conversation Script")
 
-                components['conversation_script'] = gr.Textbox(
-                    label="Script:",
-                    placeholder=dedent("""\
-                        Use [N]: format for speaker labels (1-4 for VibeVoice, 1-8 for Base, 1-9 for CustomVoice).
-                        Qwen also supports (style) for emotions:
+                    components['conversation_script'] = gr.Textbox(
+                        label="Script:",
+                        placeholder=dedent("""\
+                            Use [N]: format for speaker labels (1-4 for VibeVoice, 1-8 for Base, 1-9 for CustomVoice).
+                            Qwen also supports (style) for emotions:
 
-                        [1]: (cheerful) Hey, how's it going?
-                        [2]: (excited) I'm doing great, thanks for asking!
-                        [1]: That's wonderful to hear.
-                        [3]: (curious) Mind if I join this conversation?
+                            [1]: (cheerful) Hey, how's it going?
+                            [2]: (excited) I'm doing great, thanks for asking!
+                            [1]: That's wonderful to hear.
+                            [3]: (curious) Mind if I join this conversation?
 
-                        VibeVoice: Natural long-form generation.
-                        Base: Your custom voice clips with advanced pause control, with hacked Style control.
-                        CustomVoice: Qwen Preset speakers with style control and Pause Controls"""),
-                    lines=18
-                )
+                            VibeVoice: Natural long-form generation.
+                            Base: Your custom voice clips with advanced pause control, with hacked Style control.
+                            CustomVoice: Qwen Preset speakers with style control and Pause Controls"""),
+                        lines=18
+                    )
 
-                # Qwen speaker mapping
-                speaker_guide = dedent("""\
-                    **Qwen Speaker Numbers → Preset Voices:**
+                    # Qwen speaker mapping
+                    speaker_guide = dedent("""\
+                        **Qwen Speaker Numbers → Preset Voices:**
 
-                    | # | Speaker | Voice | Language |   | # | Speaker | Voice | Language |
-                    |---|---------|-------|----------|---|---|---------|-------|----------|
-                    | 1 | Vivian | Bright young female | 🇨🇳 Chinese |   | 6 | Ryan | Dynamic male | 🇺🇸 English |
-                    | 2 | Serena | Warm gentle female | 🇨🇳 Chinese |   | 7 | Aiden | Sunny American male | 🇺🇸 English |
-                    | 3 | Uncle_Fu | Seasoned mellow male | 🇨🇳 Chinese |   | 8 | Ono_Anna | Playful female | 🇯🇵 Japanese |
-                    | 4 | Dylan | Youthful Beijing male | 🇨🇳 Chinese |   | 9 | Sohee | Warm female | 🇰🇷 Korean |
-                    | 5 | Eric | Lively Chengdu male | 🇨🇳 Chinese |  |  |  |  |  |
+                        | # | Speaker | Voice | Language |   | # | Speaker | Voice | Language |
+                        |---|---------|-------|----------|---|---|---------|-------|----------|
+                        | 1 | Vivian | Bright young female | 🇨🇳 Chinese |   | 6 | Ryan | Dynamic male | 🇺🇸 English |
+                        | 2 | Serena | Warm gentle female | 🇨🇳 Chinese |   | 7 | Aiden | Sunny American male | 🇺🇸 English |
+                        | 3 | Uncle_Fu | Seasoned mellow male | 🇨🇳 Chinese |   | 8 | Ono_Anna | Playful female | 🇯🇵 Japanese |
+                        | 4 | Dylan | Youthful Beijing male | 🇨🇳 Chinese |   | 9 | Sohee | Warm female | 🇰🇷 Korean |
+                        | 5 | Eric | Lively Chengdu male | 🇨🇳 Chinese |  |  |  |  |  |
 
-                    *Each speaker works best in their native language.*
+                        *Each speaker works best in their native language.*
+                        """)
+
+                    components['qwen_speaker_table'] = gr.HTML(
+                        value=format_help_html(speaker_guide),
+                        container=True,
+                        padding=True,
+                        visible=is_qwen_custom
+                    )
+
+                    # Qwen Base voice sample selectors
+                    components['qwen_base_voices_section'] = gr.Column(visible=is_qwen_base)
+                    with components['qwen_base_voices_section']:
+                        gr.Markdown("### Voice Samples (Up to 8 Speakers)")
+
+                        with gr.Row():
+                            with gr.Column():
+                                components['qwen_voice_sample_1'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[1] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+                            with gr.Column():
+                                components['qwen_voice_sample_2'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[2] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+
+                        with gr.Row():
+                            with gr.Column():
+                                components['qwen_voice_sample_3'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[3] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+                            with gr.Column():
+                                components['qwen_voice_sample_4'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[4] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+
+                        with gr.Row():
+                            with gr.Column():
+                                components['qwen_voice_sample_5'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[5] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+                            with gr.Column():
+                                components['qwen_voice_sample_6'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[6] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+
+                        with gr.Row():
+                            with gr.Column():
+                                components['qwen_voice_sample_7'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[7] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+                            with gr.Column():
+                                components['qwen_voice_sample_8'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[8] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+
+                        components['refresh_qwen_samples_btn'] = gr.Button("Refresh Voice Samples", size="md")
+
+                    # VibeVoice voice sample selectors
+                    components['vibevoice_voices_section'] = gr.Column(visible=is_vibevoice)
+                    with components['vibevoice_voices_section']:
+                        gr.Markdown("### Voice Samples (Up to 4 Speakers)")
+
+                        with gr.Row():
+                            with gr.Column():
+                                components['voice_sample_1'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[1] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+                            with gr.Column():
+                                components['voice_sample_2'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[2] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+
+                        with gr.Row():
+                            with gr.Column():
+                                components['voice_sample_3'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[3] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+                            with gr.Column():
+                                components['voice_sample_4'] = gr.Dropdown(
+                                    choices=conversation_available_samples,
+                                    value=conversation_first_sample,
+                                    label="[4] Voice Sample",
+                                    info="Select from your prepared samples"
+                                )
+
+                        components['refresh_conv_samples_btn'] = gr.Button("Refresh Voice Samples", size="md")
+
+                # Right - Settings and output
+                with gr.Column(scale=1):
+                    gr.Markdown("### Settings")
+
+                    # Qwen CustomVoice settings
+                    components['qwen_custom_settings'] = gr.Column(visible=is_qwen_custom)
+                    with components['qwen_custom_settings']:
+                        components['conv_model_size'] = gr.Dropdown(
+                            choices=MODEL_SIZES_CUSTOM,
+                            value=_user_config.get("conv_model_size", "Large"),
+                            label="Model Size",
+                            info="Small = Faster, Large = Better Quality"
+                        )
+
+                    # Qwen Base settings
+                    components['qwen_base_settings'] = gr.Column(visible=is_qwen_base)
+                    with components['qwen_base_settings']:
+                        components['conv_base_model_size'] = gr.Dropdown(
+                            choices=MODEL_SIZES_BASE,
+                            value=_user_config.get("conv_base_model_size", "Small"),
+                            label="Model Size",
+                            info="Small = Faster, Large = Better Quality"
+                        )
+
+                    # Shared Language and Seed
+                    with gr.Column():
+                        with gr.Row():
+                            components['conv_language'] = gr.Dropdown(
+                                scale=5,
+                                choices=LANGUAGES,
+                                value=_user_config.get("language", "Auto"),
+                                label="Language",
+                                info="Language for all lines (Auto recommended)"
+                            )
+                            components['conv_seed'] = gr.Number(
+                                label="Seed",
+                                value=-1,
+                                precision=0,
+                                info="(-1 for random)"
+                            )
+
+                    # Shared Pause Controls
+                    components['qwen_pause_controls'] = gr.Accordion("Pause Controls", open=False, visible=(is_qwen_custom or is_qwen_base))
+                    with components['qwen_pause_controls']:
+                        with gr.Column():
+                            components['conv_pause_linebreak'] = gr.Slider(
+                                minimum=0.0,
+                                maximum=3.0,
+                                value=_user_config.get("conv_pause_linebreak", 0.5),
+                                step=0.1,
+                                label="Pause Between Lines",
+                                info="Silence between each speaker turn"
+                            )
+
+                            with gr.Row():
+                                components['conv_pause_period'] = gr.Slider(
+                                    minimum=0.0,
+                                    maximum=2.0,
+                                    value=_user_config.get("conv_pause_period", 0.4),
+                                    step=0.1,
+                                    label="After Period (.)",
+                                    info="Pause after periods"
+                                )
+                                components['conv_pause_comma'] = gr.Slider(
+                                    minimum=0.0,
+                                    maximum=2.0,
+                                    value=_user_config.get("conv_pause_comma", 0.2),
+                                    step=0.1,
+                                    label="After Comma (,)",
+                                    info="Pause after commas"
+                                )
+
+                            with gr.Row():
+                                components['conv_pause_question'] = gr.Slider(
+                                    minimum=0.0,
+                                    maximum=2.0,
+                                    value=_user_config.get("conv_pause_question", 0.6),
+                                    step=0.1,
+                                    label="After Question (?)",
+                                    info="Pause after questions"
+                                )
+                                components['conv_pause_hyphen'] = gr.Slider(
+                                    minimum=0.0,
+                                    maximum=2.0,
+                                    value=_user_config.get("conv_pause_hyphen", 0.3),
+                                    step=0.1,
+                                    label="After Hyphen (-)",
+                                    info="Pause after hyphens"
+                                )
+
+                    # VibeVoice-specific settings
+                    components['vibevoice_settings'] = gr.Column(visible=is_vibevoice)
+                    with components['vibevoice_settings']:
+                        components['longform_model_size'] = gr.Dropdown(
+                            choices=MODEL_SIZES_VIBEVOICE,
+                            value=_user_config.get("vibevoice_model_size", "Large"),
+                            label="Model Size",
+                            info="Small = Faster, Large = Better Quality"
+                        )
+
+                        # VibeVoice Advanced Parameters
+                        vv_conv_params = create_vibevoice_advanced_params(
+                            initial_num_steps=20,
+                            initial_cfg_scale=3.0,
+                            visible=is_vibevoice
+                        )
+                        components['vv_conv_num_steps'] = vv_conv_params['num_steps']
+                        components['longform_cfg_scale'] = vv_conv_params['cfg_scale']
+                        components['vv_conv_do_sample'] = vv_conv_params['do_sample']
+                        components['vv_conv_repetition_penalty'] = vv_conv_params['repetition_penalty']
+                        components['vv_conv_temperature'] = vv_conv_params['temperature']
+                        components['vv_conv_top_k'] = vv_conv_params['top_k']
+                        components['vv_conv_top_p'] = vv_conv_params['top_p']
+
+                    # Qwen Advanced Parameters
+                    components['qwen_conv_advanced'] = gr.Column(visible=(is_qwen_custom or is_qwen_base))
+                    with components['qwen_conv_advanced']:
+                        # Emotion intensity slider
+                        components['conv_emotion_intensity_row'] = gr.Row(visible=is_qwen_base)
+                        with components['conv_emotion_intensity_row']:
+                            components['conv_emotion_intensity'] = create_emotion_intensity_slider(
+                                initial_intensity=1.0,
+                                label="Emotion Intensity",
+                                visible=is_qwen_base
+                            )
+
+                        # Qwen advanced parameters
+                        qwen_conv_params = create_qwen_advanced_params(
+                            include_emotion=False,
+                            visible=(is_qwen_custom or is_qwen_base)
+                        )
+                        components['qwen_conv_do_sample'] = qwen_conv_params['do_sample']
+                        components['qwen_conv_temperature'] = qwen_conv_params['temperature']
+                        components['qwen_conv_top_k'] = qwen_conv_params['top_k']
+                        components['qwen_conv_top_p'] = qwen_conv_params['top_p']
+                        components['qwen_conv_repetition_penalty'] = qwen_conv_params['repetition_penalty']
+                        components['qwen_conv_max_new_tokens'] = qwen_conv_params['max_new_tokens']
+
+                    # Shared settings
+                    components['conv_generate_btn'] = gr.Button("Generate Conversation", variant="primary", size="lg")
+
+                    components['conv_output_audio'] = gr.Audio(
+                        label="Generated Conversation",
+                        type="filepath"
+                    )
+                    components['conv_status'] = gr.Textbox(label="Status", interactive=False, lines=2, max_lines=5)
+
+                    # Model-specific tips
+                    qwen_custom_tips_text = dedent("""\
+                    **Qwen CustomVoice Tips:**
+                    - Fast generation with preset voices
+                    - Up to 9 different speakers
+                    - Tip: Use `[break=1.5]` inline for custom pauses
+                    - Each voice optimized for their native language
+                    - Style instructions: (cheerful), (sad), (excited), etc.
                     """)
 
-                components['qwen_speaker_table'] = gr.HTML(
-                    value=format_help_html(speaker_guide),
-                    container=True,
-                    padding=True,
-                    visible=is_qwen_custom
-                )
+                    qwen_base_tips_text = dedent("""\
+                    **Qwen Base Tips:**
+                    - Use your own custom voice samples
+                    - Up to 8 different speakers
+                    - Tip: Use `[break=1.5]` inline for custom pauses
+                    - Advanced pause control (periods, commas, questions, hyphens)
+                    - Prepare 3-10 second voice samples in samples/ folder
+                    """)
 
-                # Qwen Base voice sample selectors
-                components['qwen_base_voices_section'] = gr.Column(visible=is_qwen_base)
-                with components['qwen_base_voices_section']:
-                    gr.Markdown("### Voice Samples (Up to 8 Speakers)")
+                    vibevoice_tips_text = dedent("""\
+                    **VibeVoice Tips:**
+                    - Up to 90 minutes continuous generation
+                    - Up to 4 speakers with custom voices
+                    - May spontaneously add background music/sounds
+                    - Longer scripts work best with Large model
+                    - Natural conversation flow (no manual pause control)
+                    """)
 
-                    with gr.Row():
-                        with gr.Column():
-                            components['qwen_voice_sample_1'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[1] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-                        with gr.Column():
-                            components['qwen_voice_sample_2'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[2] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-
-                    with gr.Row():
-                        with gr.Column():
-                            components['qwen_voice_sample_3'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[3] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-                        with gr.Column():
-                            components['qwen_voice_sample_4'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[4] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-
-                    with gr.Row():
-                        with gr.Column():
-                            components['qwen_voice_sample_5'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[5] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-                        with gr.Column():
-                            components['qwen_voice_sample_6'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[6] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-
-                    with gr.Row():
-                        with gr.Column():
-                            components['qwen_voice_sample_7'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[7] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-                        with gr.Column():
-                            components['qwen_voice_sample_8'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[8] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-
-                    components['refresh_qwen_samples_btn'] = gr.Button("Refresh Voice Samples", size="md")
-
-                # VibeVoice voice sample selectors
-                components['vibevoice_voices_section'] = gr.Column(visible=is_vibevoice)
-                with components['vibevoice_voices_section']:
-                    gr.Markdown("### Voice Samples (Up to 4 Speakers)")
-
-                    with gr.Row():
-                        with gr.Column():
-                            components['voice_sample_1'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[1] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-                        with gr.Column():
-                            components['voice_sample_2'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[2] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-
-                    with gr.Row():
-                        with gr.Column():
-                            components['voice_sample_3'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[3] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-                        with gr.Column():
-                            components['voice_sample_4'] = gr.Dropdown(
-                                choices=conversation_available_samples,
-                                value=conversation_first_sample,
-                                label="[4] Voice Sample",
-                                info="Select from your prepared samples"
-                            )
-
-                    components['refresh_conv_samples_btn'] = gr.Button("Refresh Voice Samples", size="md")
-
-            # Right - Settings and output
-            with gr.Column(scale=1):
-                gr.Markdown("### Settings")
-
-                # Qwen CustomVoice settings
-                components['qwen_custom_settings'] = gr.Column(visible=is_qwen_custom)
-                with components['qwen_custom_settings']:
-                    components['conv_model_size'] = gr.Dropdown(
-                        choices=MODEL_SIZES_CUSTOM,
-                        value=_user_config.get("conv_model_size", "Large"),
-                        label="Model Size",
-                        info="Small = Faster, Large = Better Quality"
+                    components['qwen_custom_tips'] = gr.HTML(
+                        value=format_help_html(qwen_custom_tips_text),
+                        container=True,
+                        padding=True,
+                        visible=is_qwen_custom
                     )
 
-                # Qwen Base settings
-                components['qwen_base_settings'] = gr.Column(visible=is_qwen_base)
-                with components['qwen_base_settings']:
-                    components['conv_base_model_size'] = gr.Dropdown(
-                        choices=MODEL_SIZES_BASE,
-                        value=_user_config.get("conv_base_model_size", "Small"),
-                        label="Model Size",
-                        info="Small = Faster, Large = Better Quality"
+                    components['qwen_base_tips'] = gr.HTML(
+                        value=format_help_html(qwen_base_tips_text),
+                        container=True,
+                        padding=True,
+                        visible=is_qwen_base
                     )
 
-                # Shared Language and Seed
-                with gr.Column():
-                    with gr.Row():
-                        components['conv_language'] = gr.Dropdown(
-                            scale=5,
-                            choices=LANGUAGES,
-                            value=_user_config.get("language", "Auto"),
-                            label="Language",
-                            info="Language for all lines (Auto recommended)"
-                        )
-                        components['conv_seed'] = gr.Number(
-                            label="Seed",
-                            value=-1,
-                            precision=0,
-                            info="(-1 for random)"
-                        )
-
-                # Shared Pause Controls
-                components['qwen_pause_controls'] = gr.Accordion("Pause Controls", open=False, visible=(is_qwen_custom or is_qwen_base))
-                with components['qwen_pause_controls']:
-                    with gr.Column():
-                        components['conv_pause_linebreak'] = gr.Slider(
-                            minimum=0.0,
-                            maximum=3.0,
-                            value=_user_config.get("conv_pause_linebreak", 0.5),
-                            step=0.1,
-                            label="Pause Between Lines",
-                            info="Silence between each speaker turn"
-                        )
-
-                        with gr.Row():
-                            components['conv_pause_period'] = gr.Slider(
-                                minimum=0.0,
-                                maximum=2.0,
-                                value=_user_config.get("conv_pause_period", 0.4),
-                                step=0.1,
-                                label="After Period (.)",
-                                info="Pause after periods"
-                            )
-                            components['conv_pause_comma'] = gr.Slider(
-                                minimum=0.0,
-                                maximum=2.0,
-                                value=_user_config.get("conv_pause_comma", 0.2),
-                                step=0.1,
-                                label="After Comma (,)",
-                                info="Pause after commas"
-                            )
-
-                        with gr.Row():
-                            components['conv_pause_question'] = gr.Slider(
-                                minimum=0.0,
-                                maximum=2.0,
-                                value=_user_config.get("conv_pause_question", 0.6),
-                                step=0.1,
-                                label="After Question (?)",
-                                info="Pause after questions"
-                            )
-                            components['conv_pause_hyphen'] = gr.Slider(
-                                minimum=0.0,
-                                maximum=2.0,
-                                value=_user_config.get("conv_pause_hyphen", 0.3),
-                                step=0.1,
-                                label="After Hyphen (-)",
-                                info="Pause after hyphens"
-                            )
-
-                # VibeVoice-specific settings
-                components['vibevoice_settings'] = gr.Column(visible=is_vibevoice)
-                with components['vibevoice_settings']:
-                    components['longform_model_size'] = gr.Dropdown(
-                        choices=MODEL_SIZES_VIBEVOICE,
-                        value=_user_config.get("vibevoice_model_size", "Large"),
-                        label="Model Size",
-                        info="Small = Faster, Large = Better Quality"
-                    )
-
-                    # VibeVoice Advanced Parameters
-                    vv_conv_params = create_vibevoice_advanced_params(
-                        initial_num_steps=20,
-                        initial_cfg_scale=3.0,
+                    components['vibevoice_tips'] = gr.HTML(
+                        value=format_help_html(vibevoice_tips_text),
+                        container=True,
+                        padding=True,
                         visible=is_vibevoice
                     )
-                    components['vv_conv_num_steps'] = vv_conv_params['num_steps']
-                    components['longform_cfg_scale'] = vv_conv_params['cfg_scale']
-                    components['vv_conv_do_sample'] = vv_conv_params['do_sample']
-                    components['vv_conv_repetition_penalty'] = vv_conv_params['repetition_penalty']
-                    components['vv_conv_temperature'] = vv_conv_params['temperature']
-                    components['vv_conv_top_k'] = vv_conv_params['top_k']
-                    components['vv_conv_top_p'] = vv_conv_params['top_p']
 
-                # Qwen Advanced Parameters
-                components['qwen_conv_advanced'] = gr.Column(visible=(is_qwen_custom or is_qwen_base))
-                with components['qwen_conv_advanced']:
-                    # Emotion intensity slider
-                    components['conv_emotion_intensity_row'] = gr.Row(visible=is_qwen_base)
-                    with components['conv_emotion_intensity_row']:
-                        components['conv_emotion_intensity'] = create_emotion_intensity_slider(
-                            initial_intensity=1.0,
-                            label="Emotion Intensity",
-                            visible=is_qwen_base
-                        )
-
-                    # Qwen advanced parameters
-                    qwen_conv_params = create_qwen_advanced_params(
-                        include_emotion=False,
-                        visible=(is_qwen_custom or is_qwen_base)
-                    )
-                    components['qwen_conv_do_sample'] = qwen_conv_params['do_sample']
-                    components['qwen_conv_temperature'] = qwen_conv_params['temperature']
-                    components['qwen_conv_top_k'] = qwen_conv_params['top_k']
-                    components['qwen_conv_top_p'] = qwen_conv_params['top_p']
-                    components['qwen_conv_repetition_penalty'] = qwen_conv_params['repetition_penalty']
-                    components['qwen_conv_max_new_tokens'] = qwen_conv_params['max_new_tokens']
-
-                # Shared settings
-                components['conv_generate_btn'] = gr.Button("Generate Conversation", variant="primary", size="lg")
-
-                components['conv_output_audio'] = gr.Audio(
-                    label="Generated Conversation",
-                    type="filepath"
-                )
-                components['conv_status'] = gr.Textbox(label="Status", interactive=False, lines=2, max_lines=5)
-
-                # Model-specific tips
-                qwen_custom_tips_text = dedent("""\
-                **Qwen CustomVoice Tips:**
-                - Fast generation with preset voices
-                - Up to 9 different speakers
-                - Tip: Use `[break=1.5]` inline for custom pauses
-                - Each voice optimized for their native language
-                - Style instructions: (cheerful), (sad), (excited), etc.
-                """)
-
-                qwen_base_tips_text = dedent("""\
-                **Qwen Base Tips:**
-                - Use your own custom voice samples
-                - Up to 8 different speakers
-                - Tip: Use `[break=1.5]` inline for custom pauses
-                - Advanced pause control (periods, commas, questions, hyphens)
-                - Prepare 3-10 second voice samples in samples/ folder
-                """)
-
-                vibevoice_tips_text = dedent("""\
-                **VibeVoice Tips:**
-                - Up to 90 minutes continuous generation
-                - Up to 4 speakers with custom voices
-                - May spontaneously add background music/sounds
-                - Longer scripts work best with Large model
-                - Natural conversation flow (no manual pause control)
-                """)
-
-                components['qwen_custom_tips'] = gr.HTML(
-                    value=format_help_html(qwen_custom_tips_text),
-                    container=True,
-                    padding=True,
-                    visible=is_qwen_custom
-                )
-
-                components['qwen_base_tips'] = gr.HTML(
-                    value=format_help_html(qwen_base_tips_text),
-                    container=True,
-                    padding=True,
-                    visible=is_qwen_base
-                )
-
-                components['vibevoice_tips'] = gr.HTML(
-                    value=format_help_html(vibevoice_tips_text),
-                    container=True,
-                    padding=True,
-                    visible=is_vibevoice
-                )
-
-        return components
+            return components
 
     @classmethod
     def setup_events(cls, components, shared_state):
@@ -1187,10 +1188,10 @@ class ConversationTab(Tab):
 
 
 # Export for tab registry
-get_tab_class = lambda: ConversationTab
+get_tool_class = lambda: ConversationTool
 
 
 if __name__ == "__main__":
     """Standalone testing of Conversation tool."""
     from modules.core_components.tools import run_tool_standalone
-    run_tool_standalone(ConversationTab, port=7864, title="Conversation - Standalone")
+    run_tool_standalone(ConversationTool, port=7864, title="Conversation - Standalone")

@@ -18,25 +18,25 @@ from datetime import datetime
 from textwrap import dedent
 from pathlib import Path
 
-from modules.core_components.tool_base import Tab, TabConfig
+from modules.core_components.tool_base import Tool, ToolConfig
 from modules.core_components.ai_models.tts_manager import get_tts_manager
 from modules.core_components.emotion_manager import process_save_emotion_result, process_delete_emotion_result
 
 
-class VoicePresetsTab(Tab):
-    """Voice Presets tab implementation."""
+class VoicePresetsTool(Tool):
+    """Voice Presets tool implementation."""
 
-    config = TabConfig(
+    config = ToolConfig(
         name="Voice Presets",
-        module_name="tab_voice_presets",
+        module_name="tool_voice_presets",
         description="Generate with preset voices or trained models",
         enabled=True,
         category="generation"
     )
 
     @classmethod
-    def create_tab(cls, shared_state):
-        """Create Voice Presets tab UI."""
+    def create_tool(cls, shared_state):
+        """Create Voice Presets tool UI."""
         components = {}
 
         # Get helper functions and config
@@ -586,9 +586,9 @@ class VoicePresetsTab(Tab):
         )
 
 # Export for tab registry
-get_tab_class = lambda: VoicePresetsTab
+get_tool_class = lambda: VoicePresetsTool
 
 if __name__ == "__main__":
     """Standalone testing of Voice Presets tool."""
     from modules.core_components.tools import run_tool_standalone
-    run_tool_standalone(VoicePresetsTab, port=7863, title="Voice Presets - Standalone")
+    run_tool_standalone(VoicePresetsTool, port=7863, title="Voice Presets - Standalone")

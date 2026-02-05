@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
 import gradio as gr
 from textwrap import dedent
-from modules.core_components.tool_base import Tab, TabConfig
+from modules.core_components.tool_base import Tool, ToolConfig
 
 
 # Help content functions
@@ -392,20 +392,20 @@ def show_tips_help():
         """)
 
 
-class HelpGuideTab(Tab):
-    """Help Guide tab implementation."""
+class HelpGuideTool(Tool):
+    """Help Guide tool implementation."""
 
-    config = TabConfig(
+    config = ToolConfig(
         name="Help Guide",
-        module_name="tab_help_page",
+        module_name="tool_help_page",
         description="Documentation and usage tips",
         enabled=True,
         category="utility"
     )
 
     @classmethod
-    def create_tab(cls, shared_state):
-        """Create Help Guide tab UI."""
+    def create_tool(cls, shared_state):
+        """Create Help Guide tool UI."""
         components = {}
 
         # Extract needed items from shared_state
@@ -469,10 +469,10 @@ class HelpGuideTab(Tab):
 
 
 # Export for tab registry
-get_tab_class = lambda: HelpGuideTab
+get_tool_class = lambda: HelpGuideTool
 
 
 # Standalone testing
 if __name__ == "__main__":
     from modules.core_components.tools import run_tool_standalone
-    run_tool_standalone(HelpGuideTab, port=7869, title="Help Guide - Standalone")
+    run_tool_standalone(HelpGuideTool, port=7869, title="Help Guide - Standalone")

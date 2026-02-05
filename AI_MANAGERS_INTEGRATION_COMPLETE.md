@@ -166,7 +166,7 @@ This allows:
 ### Modular Tools
 When tools are fully modularized, they can receive managers via `shared_state`:
 ```python
-def create_tab(cls, shared_state):
+def create_tool(cls, shared_state):
     tts_manager = shared_state['tts_manager']
     asr_manager = shared_state['asr_manager']
     # Use directly instead of going through main file wrappers

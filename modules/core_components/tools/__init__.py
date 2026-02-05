@@ -11,7 +11,7 @@ import json
 import markdown
 import platform
 from pathlib import Path
-from modules.core_components.tool_base import TabConfig, Tab
+from modules.core_components.tool_base import ToolConfig, Tool
 
 # Import all tool modules here
 from modules.core_components.tools import help_page
@@ -26,140 +26,146 @@ from modules.core_components.tools import train_model
 from modules.core_components.tools import settings
 
 # Registry of available tools
-# Format: 'tool_name': (module, TabConfig)
+# Format: 'tool_name': (module, ToolConfig)
 # TODO: Add other tools as they are refactored to be self-contained
-ALL_TABS = {
-    'voice_clone': (voice_clone, voice_clone.VoiceCloneTab.config),
-    'voice_presets': (voice_presets, voice_presets.VoicePresetsTab.config),
+ALL_TOOLS = {
+    'voice_clone': (voice_clone, voice_clone.VoiceCloneTool.config),
+    'voice_presets': (voice_presets, voice_presets.VoicePresetsTool.config),
+    'conversation': (conversation, conversation.ConversationTool.config),
+    'voice_design': (voice_design, voice_design.VoiceDesignTool.config),
+    'prep_samples': (prep_samples, prep_samples.PrepSamplesTool.config),
+    'output_history': (output_history, output_history.OutputHistoryTool.config),
+    'settings': (settings, settings.SettingsTool.config),
+    'help_page': (help_page, help_page.HelpGuideTool.config),
 }
 
-# # Format: 'tool_name': (module, TabConfig)
-# ALL_TABS = {
-#     'voice_clone': (voice_clone, voice_clone.VoiceCloneTab.config),
-#     'voice_presets': (voice_presets, voice_presets.VoicePresetsTab.config),
-#     'conversation': (conversation, conversation.ConversationTab.config),
-#     'voice_design': (voice_design, voice_design.VoiceDesignTab.config),
-#     'prep_samples': (prep_samples, prep_samples.PrepSamplesTab.config),
-#     'output_history': (output_history, output_history.OutputHistoryTab.config),
-#     'finetune_dataset': (finetune_dataset, finetune_dataset.FinetuneDatasetTab.config),
-#     'train_model': (train_model, train_model.TrainModelTab.config),
-#     'settings': (settings, settings.SettingsTab.config),
-#     'help_page': (help_page, help_page.HelpGuideTab.config),
+# # Format: 'tool_name': (module, ToolConfig)
+# ALL_TOOLS = {
+#     'voice_clone': (voice_clone, voice_clone.VoiceCloneTool.config),
+#     'voice_presets': (voice_presets, voice_presets.VoicePresetsTool.config),
+#     'conversation': (conversation, conversation.ConversationTool.config),
+#     'voice_design': (voice_design, voice_design.VoiceDesignTool.config),
+#     'prep_samples': (prep_samples, prep_samples.PrepSamplesTool.config),
+#     'output_history': (output_history, output_history.OutputHistoryTool.config),
+#     'finetune_dataset': (finetune_dataset, finetune_dataset.FinetuneDatasetTool.config),
+#     'train_model': (train_model, train_model.TrainModelTool.config),
+#     'settings': (settings, settings.SettingsTool.config),
+#     'help_page': (help_page, help_page.HelpGuideTool.config),
 # }
 
 
-def get_tab_registry():
-    """Get registry of all available tabs and their configs."""
-    return {name: config for name, (_, config) in ALL_TABS.items()}
+def get_tool_registry():
+    """Get registry of all available tools and their configs."""
+    return {name: config for name, (_, config) in ALL_TOOLS.items()}
 
 
-def get_enabled_tabs(user_config):
+def get_enabled_tools(user_config):
     """
-    Get list of enabled tab modules based on user config.
+    Get list of enabled tool modules based on user config.
 
     Args:
         user_config: User configuration dict
 
     Returns:
-        List of (tab_module, TabConfig) tuples for enabled tabs
+        List of (tool_module, ToolConfig) tuples for enabled tools
     """
-    # Get tab settings from config (with defaults)
-    tab_settings = user_config.get("enabled_tabs", {})
+    # Get tool settings from config (with defaults)
+    tool_settings = user_config.get("enabled_tools", {})
 
-    enabled_tabs = []
-    for name, (module, config) in ALL_TABS.items():
+    enabled_tools = []
+    for name, (module, config) in ALL_TOOLS.items():
         # Default to enabled if not specified
-        is_enabled = tab_settings.get(config.name, config.enabled)
+        is_enabled = tool_settings.get(config.name, config.enabled)
         if is_enabled:
-            enabled_tabs.append((module, config))
+            enabled_tools.append((module, config))
 
-    return enabled_tabs
+    return enabled_tools
 
 
-def save_tab_settings(user_config, tab_name, enabled):
+def save_tool_settings(user_config, tool_name, enabled):
     """
-    Save tab enabled/disabled setting.
+    Save tool enabled/disabled setting.
 
     Args:
         user_config: User configuration dict (will be modified)
-        tab_name: Tab name
-        enabled: Whether tab is enabled
+        tool_name: Tool name
+        enabled: Whether tool is enabled
     """
-    if "enabled_tabs" not in user_config:
-        user_config["enabled_tabs"] = {}
-    user_config["enabled_tabs"][tab_name] = enabled
+    if "enabled_tools" not in user_config:
+        user_config["enabled_tools"] = {}
+    user_config["enabled_tools"][tool_name] = enabled
 
 
-def create_enabled_tabs(shared_state):
+def create_enabled_tools(shared_state):
     """
-    Create UI for all enabled tabs.
+    Create UI for all enabled tools.
 
     Args:
         shared_state: Shared globals (must include: _user_config, _active_emotions, and all helper functions)
 
     Returns:
-        Dict mapping tab module to component references
+        Dict mapping tool name to component references
     """
     user_config = shared_state.get('user_config', {})
-    enabled_tabs = get_enabled_tabs(user_config)
+    enabled_tools = get_enabled_tools(user_config)
 
-    tab_components = {}
-    for tab_module, config in enabled_tabs:
+    tool_components = {}
+    for tool_module, config in enabled_tools:
         try:
-            # Create tab UI - use get_tab_class if available
-            if hasattr(tab_module, 'get_tab_class'):
-                tab_class = tab_module.get_tab_class()
+            # Create tool UI - use get_tool_class if available
+            if hasattr(tool_module, 'get_tool_class'):
+                tool_class = tool_module.get_tool_class()
             else:
-                # Fallback: find first Tab subclass
-                tab_class = None
-                for attr_name in dir(tab_module):
-                    attr = getattr(tab_module, attr_name)
-                    if isinstance(attr, type) and issubclass(attr, Tab) and attr is not Tab:
-                        tab_class = attr
+                # Fallback: find first Tool subclass
+                tool_class = None
+                for attr_name in dir(tool_module):
+                    attr = getattr(tool_module, attr_name)
+                    if isinstance(attr, type) and issubclass(attr, Tool) and attr is not Tool:
+                        tool_class = attr
                         break
-                if not tab_class:
-                    raise ValueError(f"No Tab class found in module {tab_module}")
+                if not tool_class:
+                    raise ValueError(f"No Tool class found in module {tool_module}")
 
-            components = tab_class.create_tab(shared_state)
-            tab_components[config.name] = {
-                'module': tab_module,
+            components = tool_class.create_tool(shared_state)
+            tool_components[config.name] = {
+                'module': tool_module,
                 'config': config,
                 'components': components,
-                'tab_class': tab_class
+                'tool_class': tool_class
             }
         except Exception as e:
-            print(f"Warning: Failed to create tab '{config.name}': {e}")
+            print(f"Warning: Failed to create tool '{config.name}': {e}")
 
-    return tab_components
+    return tool_components
 
 
-def setup_tab_events(tab_components, shared_state):
+def setup_tool_events(tool_components, shared_state):
     """
-    Set up event handlers for all tabs.
+    Set up event handlers for all tools.
 
     Args:
-        tab_components: Dictionary returned by create_enabled_tabs()
+        tool_components: Dictionary returned by create_enabled_tools()
         shared_state: Shared globals
     """
-    for tab_name, tab_info in tab_components.items():
+    for tool_name, tool_info in tool_components.items():
         try:
-            tab_class = tab_info['tab_class']
-            components = tab_info['components']
+            tool_class = tool_info['tool_class']
+            components = tool_info['components']
 
             # Setup events
-            tab_class.setup_events(components, shared_state)
+            tool_class.setup_events(components, shared_state)
         except Exception as e:
-            print(f"Warning: Failed to setup events for tab '{tab_name}': {e}")
+            print(f"Warning: Failed to setup events for tool '{tool_name}': {e}")
 
 
 # Add this to modules so it can be accessed
 __all__ = [
-    'ALL_TABS',
-    'get_tab_registry',
-    'get_enabled_tabs',
-    'save_tab_settings',
-    'create_enabled_tabs',
-    'setup_tab_events',
+    'ALL_TOOLS',
+    'get_tool_registry',
+    'get_enabled_tools',
+    'save_tool_settings',
+    'create_enabled_tools',
+    'setup_tool_events',
     'load_config',
     'save_config',
     'save_preference',
@@ -705,14 +711,14 @@ def build_shared_state(user_config, active_emotions, directories, constants, man
     return shared_state
 
 
-def run_tool_standalone(TabClass, port=7860, title="Tool - Standalone", extra_shared_state=None):
+def run_tool_standalone(ToolClass, port=7860, title="Tool - Standalone", extra_shared_state=None):
     """
-    Run a tool tab in standalone mode for testing.
+    Run a tool in standalone mode for testing.
 
     Handles all boilerplate: config loading, shared_state setup, modal initialization, and app launch.
 
     Args:
-        TabClass: The Tab class to run (e.g., VoicePresetsTab)
+        ToolClass: The Tool class to run (e.g., VoicePresetsTool)
         port: Server port (default: 7860)
         title: Window title (default: "Tool - Standalone")
         extra_shared_state: Optional dict of tool-specific shared_state entries to add/override
@@ -720,12 +726,12 @@ def run_tool_standalone(TabClass, port=7860, title="Tool - Standalone", extra_sh
     Usage:
         if __name__ == "__main__":
             from modules.core_components.tools import run_tool_standalone
-            run_tool_standalone(VoicePresetsTab, port=7863, title="Voice Presets - Standalone")
+            run_tool_standalone(VoicePresetsTool, port=7863, title="Voice Presets - Standalone")
 
         # With tool-specific helpers:
         if __name__ == "__main__":
             extra = {'get_sample_choices': lambda: ['sample1', 'sample2']}
-            run_tool_standalone(VoiceCloneTab, port=7862, extra_shared_state=extra)
+            run_tool_standalone(VoiceCloneTool, port=7862, extra_shared_state=extra)
     """
     import gradio as gr
     from pathlib import Path
@@ -775,7 +781,7 @@ def run_tool_standalone(TabClass, port=7860, title="Tool - Standalone", extra_sh
         gr.HTML(CONFIRMATION_MODAL_HTML)
         gr.HTML(INPUT_MODAL_HTML)
 
-        gr.Markdown(f"# 🎙️ {TabClass.config.name} (Standalone Testing)")
+        gr.Markdown(f"# 🎙️ {ToolClass.config.name} (Standalone Testing)")
         gr.Markdown("*Standalone mode with full modal support*")
 
         # Hidden trigger widgets
@@ -810,15 +816,15 @@ def run_tool_standalone(TabClass, port=7860, title="Tool - Standalone", extra_sh
         if extra_shared_state:
             shared_state.update(extra_shared_state)
 
-        # Create and setup tab
-        components = TabClass.create_tab(shared_state)
-        TabClass.setup_events(components, shared_state)
+        # Create and setup tool
+        components = ToolClass.create_tool(shared_state)
+        ToolClass.setup_events(components, shared_state)
 
     print(f"[*] Output: {OUTPUT_DIR}")
     from modules.core_components.ai_models.model_utils import get_trained_models
     models_dir = project_root / user_config.get("models_folder", "models")
     print(f"[*] Found {len(get_trained_models(models_dir))} trained models")
-    print(f"\n✓ {TabClass.config.name} UI loaded successfully!")
+    print(f"\n✓ {ToolClass.config.name} UI loaded successfully!")
     print(f"[*] Launching on http://127.0.0.1:{port}")
 
     app.launch(

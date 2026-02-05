@@ -136,7 +136,7 @@ def mix_voices(voice_a, voice_b, ratio):
     return mixed_audio
 
 def create_mixer_ui():
-    """Create Voice Mixer tab UI."""
+    """Create Voice Mixer tool UI."""
     with gr.TabItem("Voice Mixer"):
         # UI components
         mix_btn = gr.Button("Mix")

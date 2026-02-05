@@ -6,27 +6,27 @@ Train custom voice models using finetuning datasets.
 
 import gradio as gr
 from textwrap import dedent
-from modules.core_components.tool_base import Tab, TabConfig
+from modules.core_components.tool_base import Tool, ToolConfig
 # format_help_html comes from shared_state
 from pathlib import Path
 
 
-class TrainModelTab(Tab):
-    """Train Model tab implementation."""
-    
-    config = TabConfig(
+class TrainModelTool(Tool):
+    """Train Model tool implementation."""
+
+    config = ToolConfig(
         name="Train Model",
-        module_name="tab_train_model",
+        module_name="tool_train_model",
         description="Train custom voice models",
         enabled=True,
         category="training"
     )
-    
+
     @classmethod
-    def create_tab(cls, shared_state):
-        """Create Train Model tab UI."""
+    def create_tool(cls, shared_state):
+        """Create Train Model tool UI."""
         components = {}
-        
+
         # Get helper functions and config
         format_help_html = shared_state['format_help_html']
         get_dataset_folders = shared_state['get_dataset_folders']
@@ -34,7 +34,7 @@ class TrainModelTab(Tab):
         get_trained_model_names = shared_state['get_trained_model_names']
         train_model = shared_state['train_model']
         DATASETS_DIR = shared_state['DATASETS_DIR']
-        
+
         with gr.TabItem("Train Model"):
             gr.Markdown("Train a custom voice model using your finetuning dataset")
             with gr.Row():
@@ -127,18 +127,18 @@ class TrainModelTab(Tab):
                     )
 
         return components
-    
+
     @classmethod
     def setup_events(cls, components, shared_state):
         """Wire up Train Model tab events."""
-        
+
         # Get helper functions
         get_dataset_files = shared_state['get_dataset_files']
         get_trained_model_names = shared_state['get_trained_model_names']
         train_model = shared_state['train_model']
         input_trigger = shared_state['input_trigger']
         DATASETS_DIR = shared_state['DATASETS_DIR']
-        
+
         def update_ref_audio_dropdown(folder):
             """Update reference audio dropdown when folder changes."""
             files = get_dataset_files(folder)
@@ -288,4 +288,9 @@ class TrainModelTab(Tab):
 
 
 # Export for tab registry
-get_tab_class = lambda: TrainModelTab
+get_tool_class = lambda: TrainModelTool
+
+if __name__ == "__main__":
+    """Standalone testing of Train Model tool."""
+    from modules.core_components.tools import run_tool_standalone
+    run_tool_standalone(TrainModelTool, port=7863, title="Train Model - Standalone")

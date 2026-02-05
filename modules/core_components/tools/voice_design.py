@@ -19,24 +19,24 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-from modules.core_components.tool_base import Tab, TabConfig
+from modules.core_components.tool_base import Tool, ToolConfig
 from modules.core_components.ai_models.tts_manager import get_tts_manager
 
 
-class VoiceDesignTab(Tab):
-    """Voice Design tab implementation."""
+class VoiceDesignTool(Tool):
+    """Voice Design tool implementation."""
 
-    config = TabConfig(
+    config = ToolConfig(
         name="Voice Design",
-        module_name="tab_voice_design",
+        module_name="tool_voice_design",
         description="Create voices from natural language descriptions",
         enabled=True,
         category="generation"
     )
 
     @classmethod
-    def create_tab(cls, shared_state):
-        """Create Voice Design tab UI."""
+    def create_tool(cls, shared_state):
+        """Create Voice Design tool UI."""
         components = {}
 
         # Get shared utilities
@@ -284,10 +284,10 @@ class VoiceDesignTab(Tab):
 
 
 # Export for registry
-get_tab_class = lambda: VoiceDesignTab
+get_tool_class = lambda: VoiceDesignTool
 
 
 if __name__ == "__main__":
     """Standalone testing of Voice Design tool."""
     from modules.core_components.tools import run_tool_standalone
-    run_tool_standalone(VoiceDesignTab, port=7861, title="Voice Design - Standalone")
+    run_tool_standalone(VoiceDesignTool, port=7861, title="Voice Design - Standalone")

@@ -64,8 +64,8 @@ from modules.core_components.ai_models.model_utils import get_trained_models
 
 # Modular tools
 from modules.core_components.tools import (
-    create_enabled_tabs,
-    setup_tab_events,
+    create_enabled_tools,
+    setup_tool_events,
     load_config,
     save_config,
     build_shared_state,
@@ -212,9 +212,8 @@ def create_ui():
         # ============================================================
         # LOAD ALL MODULAR TOOLS
         # ============================================================
-        with gr.Tabs():
-            tab_components = create_enabled_tabs(shared_state)
-            setup_tab_events(tab_components, shared_state)
+        tool_components = create_enabled_tools(shared_state)
+        setup_tool_events(tool_components, shared_state)
 
         # Wire up unload button
         def on_unload_all():
@@ -231,7 +230,7 @@ def create_ui():
 
 
 if __name__ == "__main__":
-    theme = gr.themes.Base.load('modules/core_components/theme.json')
+    theme = gr.themes.Base.load('modules/core_components/ui_components/theme.json')
     app = create_ui()
     app.launch(
         server_name=os.getenv("GRADIO_SERVER_NAME", "127.0.0.1"),
