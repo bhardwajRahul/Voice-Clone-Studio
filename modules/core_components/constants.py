@@ -193,5 +193,5 @@ TOOL_PORTS = {
     "voice_clone": 7862,
     "voice_presets": 7863,
     "conversation": 7864,
-    "prep_samples": 7865,
+    "prep_audio": 7865,
 }

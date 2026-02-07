@@ -27,7 +27,7 @@ class PrepSamplesTool(Tool):
 
     config = ToolConfig(
         name="Prep Samples",
-        module_name="tool_prep_samples",
+        module_name="tool_prep_audio",
         description="Prepare and manage voice samples and datasets",
         enabled=True,
         category="preparation"
@@ -47,7 +47,7 @@ class PrepSamplesTool(Tool):
         WHISPER_AVAILABLE = shared_state['WHISPER_AVAILABLE']
         DEEPFILTER_AVAILABLE = shared_state['DEEPFILTER_AVAILABLE']
 
-        with gr.TabItem("Prep Samples"):
+        with gr.TabItem("Prep Audio Samples"):
             gr.Markdown("Prepare audio samples for voice cloning")
             with gr.Row():
                 # Left column - File browser
@@ -61,7 +61,7 @@ class PrepSamplesTool(Tool):
 
                     # --- Samples mode ---
                     with gr.Column(visible=True) as samples_col:
-                        gr.Markdown("### Existing Samples")
+                        gr.Markdown("### Audio Samples")
                         components['sample_lister'] = FileLister(
                             value=get_sample_choices(),
                             height=250,

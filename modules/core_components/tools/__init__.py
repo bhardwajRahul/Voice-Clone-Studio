@@ -19,7 +19,7 @@ from modules.core_components.tools import voice_design
 from modules.core_components.tools import voice_clone
 from modules.core_components.tools import voice_presets
 from modules.core_components.tools import conversation
-from modules.core_components.tools import prep_samples
+from modules.core_components.tools import prep_audio
 from modules.core_components.tools import train_model
 from modules.core_components.tools import settings
 
@@ -30,7 +30,7 @@ ALL_TOOLS = {
     'voice_presets': (voice_presets, voice_presets.VoicePresetsTool.config),
     'conversation': (conversation, conversation.ConversationTool.config),
     'voice_design': (voice_design, voice_design.VoiceDesignTool.config),
-    'prep_samples': (prep_samples, prep_samples.PrepSamplesTool.config),
+    'prep_audio': (prep_audio, prep_audio.PrepSamplesTool.config),
     'output_history': (output_history, output_history.OutputHistoryTool.config),
     'train_model': (train_model, train_model.TrainModelTool.config),
     'settings': (settings, settings.SettingsTool.config),
@@ -209,7 +209,7 @@ def get_configured_dir(folder_key, default):
 
 # Shared CSS for all tools
 # - Hides trigger widgets used by modal system
-# - Styles file list groups for prep_samples, finetune_dataset, etc.
+# - Styles file list groups for prep_audio, finetune_dataset, etc.
 SHARED_CSS = """
 #confirm-trigger {
     display: none !important;
@@ -252,11 +252,11 @@ SHARED_CSS = """
     background: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* Push Settings (last tab) to the far right */
-#main-tabs .tab-container[role="tablist"] {
+/* Push Settings (last tab) to the far right - only top-level tabs */
+#main-tabs > .tab-wrapper > .tab-container[role="tablist"] {
     display: flex !important;
 }
-#main-tabs .tab-container[role="tablist"] > button:last-child {
+#main-tabs > .tab-wrapper > .tab-container[role="tablist"] > button:last-child {
     margin-left: auto !important;
 }
 """
@@ -603,21 +603,6 @@ def get_or_create_voice_prompt_standalone(model, sample_name, wav_path, ref_text
     # Create new prompt
     if progress_callback:
         progress_callback(0.2, desc="Processing voice sample (first time)...")
-
-    prompt_items = model.create_voice_clone_prompt(
-        ref_audio=wav_path,
-        ref_text=ref_text,
-        x_vector_only_mode=False,
-    )
-
-    # Save to cache
-    if progress_callback:
-        progress_callback(0.35, desc="Caching voice prompt...")
-
-    tts_manager.save_voice_prompt(sample_name, prompt_items, sample_hash, model_size)
-
-    return prompt_items, False  # False = newly created
-
 
     prompt_items = model.create_voice_clone_prompt(
         ref_audio=wav_path,

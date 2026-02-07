@@ -18,9 +18,21 @@ from pathlib import Path
 from modules.core_components.tool_base import Tool, ToolConfig
 from modules.core_components.help_page import (
     show_voice_clone_help, show_conversation_help, show_voice_presets_help,
-    show_voice_design_help, show_prep_samples_help, show_finetune_help,
+    show_voice_design_help, show_prep_audio_help, show_finetune_help,
     show_train_help, show_tips_help
 )
+
+# Tools that can be toggled (everything except Settings)
+# Format: (config_key, display_label)
+TOGGLEABLE_TOOLS = [
+    ("Voice Clone", "Voice Clone"),
+    ("Voice Presets", "Voice Presets"),
+    ("Conversation", "Conversation"),
+    ("Voice Design", "Voice Design"),
+    ("Prep Samples", "Prep Samples"),
+    ("Output History", "Output History"),
+    ("Train Model", "Train Model"),
+]
 
 
 class SettingsTool(Tool):
@@ -185,6 +197,33 @@ class SettingsTool(Tool):
                             max_lines=10
                         )
 
+                    gr.Markdown("### Visible Tools")
+                    gr.Markdown("Toggle which tools appear as tabs. Changes take effect after restarting the app.")
+
+                    # Get current enabled_tools from config
+                    tool_settings = _user_config.get("enabled_tools", {})
+
+                    with gr.Row():
+                        # Split into two columns for cleaner layout
+                        with gr.Column():
+                            for key, label in TOGGLEABLE_TOOLS[:4]:
+                                is_enabled = tool_settings.get(key, True)
+                                components[f'tool_toggle_{key}'] = gr.Checkbox(
+                                    label=label,
+                                    value=is_enabled,
+                                    interactive=True
+                                )
+                        with gr.Column():
+                            for key, label in TOGGLEABLE_TOOLS[4:]:
+                                is_enabled = tool_settings.get(key, True)
+                                components[f'tool_toggle_{key}'] = gr.Checkbox(
+                                    label=label,
+                                    value=is_enabled,
+                                    interactive=True
+                                )
+
+                    components['tool_toggle_status'] = gr.Markdown("")
+
                 with gr.TabItem("Help Guide"):
                     gr.Markdown("# Voice Clone Studio - Help & Guide")
 
@@ -220,9 +259,11 @@ class SettingsTool(Tool):
         # Extract needed items from shared_state
         _user_config = shared_state.get('_user_config', {})
         save_preference = shared_state.get('save_preference')
-        save_config = shared_state.get('save_config')
         download_model_from_huggingface = shared_state.get('download_model_from_huggingface')
         format_help_html = shared_state.get('format_help_html')
+
+        # Lazy import to avoid circular dependency
+        from modules.core_components.tools import save_config
 
         # Save low CPU memory setting
         components['settings_low_cpu_mem'].change(
@@ -249,6 +290,25 @@ class SettingsTool(Tool):
             inputs=[components['settings_audio_notifications']],
             outputs=[]
         )
+
+        # Tool toggle handlers
+        def toggle_tool(tool_name, enabled):
+            """Save tool visibility to config."""
+            if "enabled_tools" not in _user_config:
+                _user_config["enabled_tools"] = {}
+            _user_config["enabled_tools"][tool_name] = enabled
+            # Use save_preference to persist (saves full config)
+            save_preference("enabled_tools", _user_config["enabled_tools"])
+            return "Restart the app to apply changes."
+
+        for key, label in TOGGLEABLE_TOOLS:
+            comp = components[f'tool_toggle_{key}']
+            # Use default arg to capture key in closure
+            comp.change(
+                lambda enabled, k=key: toggle_tool(k, enabled),
+                inputs=[comp],
+                outputs=[components['tool_toggle_status']]
+            )
 
         # Reset button handlers
         def reset_folder(folder_key):
@@ -346,7 +406,7 @@ class SettingsTool(Tool):
                 "Conversation": show_conversation_help,
                 "Voice Presets": show_voice_presets_help,
                 "Voice Design": show_voice_design_help,
-                "Prep Samples": show_prep_samples_help,
+                "Prep Samples": show_prep_audio_help,
                 "Finetune Dataset": show_finetune_help,
                 "Train Model": show_train_help,
                 "Tips & Tricks": show_tips_help

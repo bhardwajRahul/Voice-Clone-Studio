@@ -177,7 +177,7 @@ def show_voice_design_help():
         """)
 
 
-def show_prep_samples_help():
+def show_prep_audio_help():
     """Return help content for Prep Samples tab."""
     return dedent("""
         ### 🎬 Prep Samples
@@ -490,7 +490,7 @@ class HelpGuideTool(Tool):
                 "Conversation": show_conversation_help,
                 "Voice Presets": show_voice_presets_help,
                 "Voice Design": show_voice_design_help,
-                "Prep Samples": show_prep_samples_help,
+                "Prep Samples": show_prep_audio_help,
                 "Finetune Dataset": show_finetune_help,
                 "Train Model": show_train_help,
                 "Tips & Tricks": show_tips_help

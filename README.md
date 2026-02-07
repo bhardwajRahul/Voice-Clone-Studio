@@ -381,6 +381,3 @@ This project is based on and uses code from:
 ## Updates
 
 For detailed version history and release notes, see [docs/updates.md](docs/updates.md).
-
-**Latest Version:** 0.6.0 - Enhanced Model Support & Settings (January 27, 2026)
-

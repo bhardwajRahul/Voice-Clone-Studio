@@ -127,7 +127,7 @@ ASR Model Manager:
 1. Add loading method to `TTSManager`:
 
 ```python
-def get_new_tts_model(self, size: str = "default"):
+def get_new_tts_model(self, size="default"):
     """Load NewTTS model."""
     model_id = f"new_tts_{size}"
     self._check_and_unload_if_different(model_id)
@@ -197,28 +197,8 @@ User configuration (`config.json`) controls:
 ✅ **Optimized** - Smart VRAM management  
 ✅ **Configurable** - User control over model behavior  
 
-## Migration from Old System
-
-**Before:**
-```python
-# Model code scattered everywhere in voice_clone_studio.py
-def get_tts_model(size="1.7B"):
-    global _tts_model
-    # ... 50 lines of loading logic ...
-    return _tts_model
-```
-
-**After:**
-```python
-# Clean, centralized
-from modules.core_components.ai_models import get_tts_manager
-tts_manager = get_tts_manager()
-model = tts_manager.get_qwen3_base()
-```
-
 ## Future Improvements
 
-- [ ] Lazy loading (load only on first use)
 - [ ] Model preloading for faster startup
 - [ ] Per-model configuration
 - [ ] Model benchmarking utilities

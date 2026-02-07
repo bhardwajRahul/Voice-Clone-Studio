@@ -22,64 +22,156 @@
 - Keep function signatures clean and simple
 - Document types in docstrings if needed
 
-## Core Architecture Principle
+## Architecture Overview
 
-**CRITICAL**: `voice_clone_studio.py` is becoming too large (6000+ lines). **All new features MUST be modularized.**
+Voice Clone Studio v1.0 is fully modular. The main file (`voice_clone_studio.py`) is a ~230 line orchestrator that loads tools dynamically. All features live in `modules/`.
 
-## Module-First Development
-
-### When Adding ANY New Feature:
-
-#### CREATE A MODULE (Required)
-- **Core Components (our code)** → `modules/core_components/[feature].py`
-  - Emotion management, UI helpers, configuration, notifications, etc.
-  - Anything built specifically for this app's general use
-- **New UI Tab** → `modules/core_components/tab_[name].py`
-- **Audio Processing** → `modules/core_components/audio_processing/[feature].py`
-- **External Code** → `modules/[repo_name]/`
-  - Third-party integrations (qwen_finetune, vibevoice_asr, etc.)
-  - Keep external repos directly under modules/
-
-#### DON'T ADD TO MAIN FILE
-- No new 100+ line functions in `voice_clone_studio.py`
-- No duplicating existing functionality
-- No business logic in the main UI file
-
-### Module Organization Rules
-**`modules/core_components/`** - Our code for general app use:
-- emotion_manager.py
-- ui_help.py
-- confirmation_modal.py
-- notification.wav
-- Any new core functionality
-
-**`modules/[external_name]/`** - External/third-party code:
-- qwen_finetune/ (training logic)
-- vibevoice_tts/ (VibeVoice TTS)
-- vibevoice_asr/ (VibeVoice ASR)
-- Keep external repos separate from our core code
-
-### Existing Module Structure
+### Project Structure
 ```
+voice_clone_studio.py              # Main orchestrator (~230 lines)
+config.json                        # User preferences & enabled tools
 modules/
-├── core_components/          # OUR core app components
-│   ├── emotion_manager.py    # Emotion system
-│   ├── constants.py          # Central constants (models, languages, speakers)
-│   ├── ui_help.py            # Help documentation
-│   ├── confirmation_modal.py # Confirmation modal dialog
-│   └── notification.wav      # Audio notification
+├── core_components/               # OUR core app code
+│   ├── __init__.py                # Core exports (modals, emotions, etc.)
+│   ├── constants.py               # Central constants (models, languages, speakers)
+│   ├── emotion_manager.py         # Emotion system (40+ presets)
+│   ├── help_page.py               # Help content functions
+│   ├── tool_base.py               # Tool/ToolConfig base classes
+│   ├── audio_utils.py             # Audio processing utilities
+│   ├── notification.wav           # Completion notification sound
+│   │
+│   ├── tools/                     # ALL UI TOOLS (tabs)
+│   │   ├── __init__.py            # Tool registry, shared state builder, CSS, utilities
+│   │   ├── voice_clone.py         # Voice Clone tool
+│   │   ├── voice_presets.py       # Voice Presets tool
+│   │   ├── conversation.py        # Conversation tool
+│   │   ├── voice_design.py        # Voice Design tool
+│   │   ├── prep_audio.py          # Prep Audio tool (samples + datasets)
+│   │   ├── output_history.py      # Output History tool
+│   │   ├── train_model.py         # Train Model tool
+│   │   └── settings.py            # Settings + Help Guide tool
+│   │
+│   ├── ai_models/                 # AI model managers
+│   │   ├── __init__.py            # get_tts_manager(), get_asr_manager()
+│   │   ├── tts_manager.py         # TTS: Qwen3 Base/Custom/Design, VibeVoice
+│   │   ├── asr_manager.py         # ASR: Whisper, VibeVoice ASR
+│   │   └── model_utils.py         # Shared model utilities
+│   │
+│   ├── ui_components/             # Reusable UI components
+│   │   ├── __init__.py            # Component exports
+│   │   ├── modals.py              # Confirmation & input modal logic
+│   │   ├── confirmation_modal.*   # Confirmation modal (html/css/js)
+│   │   ├── input_modal.*          # Input modal (html/css/js)
+│   │   └── theme.json             # Gradio theme
+│   │
+│   └── gradio_filelister/         # Custom Gradio component (v0.4.0)
 │
-├── qwen_finetune/            # EXTERNAL: Training logic
-├── vibevoice_tts/            # EXTERNAL: VibeVoice TTS
-├── vibevoice_asr/            # EXTERNAL: VibeVoice ASR
-└── [new External modules here]
+├── deepfilternet/                 # EXTERNAL: Audio denoising
+├── qwen_finetune/                 # EXTERNAL: Training logic
+├── vibevoice_tts/                 # EXTERNAL: VibeVoice TTS
+└── vibevoice_asr/                 # EXTERNAL: VibeVoice ASR
 ```
+
+## Tool System
+
+### How Tools Work
+
+Each tool is a self-contained module in `modules/core_components/tools/` that:
+1. Defines a `ToolConfig` with name, description, category, and default enabled state
+2. Implements `create_tool(shared_state)` — creates Gradio UI inside a `gr.TabItem`
+3. Implements `setup_events(components, shared_state)` — wires up event handlers
+4. Returns a component dict for cross-tool communication
+
+### Tool Registry (`tools/__init__.py`)
+
+All tools are registered in `ALL_TOOLS`:
+```python
+ALL_TOOLS = {
+    'voice_clone': (voice_clone, voice_clone.VoiceCloneTool.config),
+    'voice_presets': (voice_presets, voice_presets.VoicePresetsTool.config),
+    'conversation': (conversation, conversation.ConversationTool.config),
+    'voice_design': (voice_design, voice_design.VoiceDesignTool.config),
+    'prep_audio': (prep_audio, prep_audio.PrepAudioTool.config),
+    'output_history': (output_history, output_history.OutputHistoryTool.config),
+    'train_model': (train_model, train_model.TrainModelTool.config),
+    'settings': (settings, settings.SettingsTool.config),
+}
+```
+
+Users can enable/disable tools in Settings > Visible Tools, saved as `enabled_tools` in `config.json`. Settings is always visible.
+
+### Adding a New Tool
+
+1. **Create the module** in `modules/core_components/tools/my_tool.py`:
+```python
+import gradio as gr
+from modules.core_components.tool_base import Tool, ToolConfig
+
+class MyTool(Tool):
+    config = ToolConfig(
+        name="My Tool",
+        module_name="my_tool",
+        description="What this tool does",
+        enabled=True,
+        category="generation"
+    )
+
+    @classmethod
+    def create_tool(cls, shared_state):
+        components = {}
+        with gr.TabItem("My Tool"):
+            components['input'] = gr.Textbox(label="Input")
+            components['btn'] = gr.Button("Go")
+            components['output'] = gr.Audio()
+        return components
+
+    @classmethod
+    def setup_events(cls, components, shared_state):
+        save_preference = shared_state.get('save_preference')
+        # Wire up events here
+        components['btn'].click(...)
+
+get_tool_class = lambda: MyTool
+```
+
+2. **Register** in `tools/__init__.py`:
+```python
+from modules.core_components.tools import my_tool
+ALL_TOOLS['my_tool'] = (my_tool, my_tool.MyTool.config)
+```
+
+3. **Add to toggleable list** in `settings.py`:
+```python
+TOGGLEABLE_TOOLS = [
+    ...
+    ("My Tool", "My Tool"),
+]
+```
+
+That's it. The main file does not need to be touched.
+
+### Shared State
+
+Tools receive everything they need through `shared_state`, built by `build_shared_state()`:
+- `_user_config` / `user_config` — User config dict
+- `_active_emotions` — Emotion presets
+- `SAMPLES_DIR`, `OUTPUT_DIR`, `DATASETS_DIR`, `TEMP_DIR` — Directories
+- `LANGUAGES`, `CUSTOM_VOICE_SPEAKERS`, `MODEL_SIZES_*` — Constants
+- `tts_manager`, `asr_manager` — AI model managers
+- `save_preference`, `play_completion_beep`, `format_help_html` — Utilities
+- `get_sample_choices`, `get_dataset_folders`, etc. — Data helpers
+- `confirm_trigger`, `input_trigger` — Modal triggers
+
+### Main File Responsibilities ONLY
+- Load config and initialize directories
+- Initialize AI model managers
+- Call `build_shared_state()`, `create_enabled_tools()`, `setup_tool_events()`
+- Wire the Clear VRAM button
+- Launch the Gradio app
 
 ## Central Constants System
 
-**CRITICAL**: All constants (model sizes, languages, speakers, etc.) are defined in **ONE place only**:
-
-### `modules/core_components/constants.py`
+**CRITICAL**: All constants are defined in **ONE place only**: `modules/core_components/constants.py`
 
 **Single source of truth for:**
 - Model sizes (MODEL_SIZES, MODEL_SIZES_BASE, MODEL_SIZES_CUSTOM, etc.)
@@ -90,7 +182,6 @@ modules/
 - Supported models (SUPPORTED_MODELS set)
 - Audio specifications (SAMPLE_RATE, AUDIO_FORMAT, etc.)
 
-**How to use:**
 ```python
 from modules.core_components.constants import (
     LANGUAGES,
@@ -100,63 +191,12 @@ from modules.core_components.constants import (
 )
 ```
 
-**Why this matters:**
-- ✅ Add a new model/language/speaker in ONE place
-- ✅ Changes automatically propagate everywhere
-- ✅ No duplication = no inconsistencies
-- ✅ Easier maintenance
-
 **NEVER duplicate constants** - always import from `constants.py`
-
-### Main File Responsibilities ONLY
-- Gradio UI layout structure
-- Event handler wiring (`.click()`, `.change()`)
-- Configuration loading/saving
-- Module imports and orchestration
-
-### Module Design Pattern
-
-**Example: Adding a "Voice Mixer" Feature**
-
-**WRONG** (500 lines in main file):
-```python
-# voice_clone_studio.py - DON'T DO THIS
-with gr.TabItem("Voice Mixer"):
-    # 500 lines of UI + logic here
-    def complex_mixing_algorithm():
-        # 200 lines...
-```
-
-**CORRECT** (modular):
-```python
-# modules/audio_processing/voice_mixer.py
-def mix_voices(voice_a, voice_b, ratio):
-    """Mix two voice samples."""
-    # Implementation here
-    return mixed_audio
-
-def create_mixer_ui():
-    """Create Voice Mixer tool UI."""
-    with gr.TabItem("Voice Mixer"):
-        # UI components
-        mix_btn = gr.Button("Mix")
-        # ...
-    return {'button': mix_btn, 'output': output}
-
-# voice_clone_studio.py - MAIN FILE
-from modules.audio_processing.voice_mixer import create_mixer_ui, mix_voices
-
-def create_ui():
-    # ...
-    mixer_ui = create_mixer_ui()
-    mixer_ui['button'].click(mix_voices, ...)
-```
 
 ## Configuration System
 
 ### User Preferences (`config.json`)
 ```python
-# Always use config for paths
 _user_config.get("samples_folder", "samples")
 _user_config.get("models_folder", "models")
 _user_config.get("trained_models_folder", "models")
@@ -172,45 +212,64 @@ _user_config.get("trained_models_folder", "models")
 - `offline_mode` - Use local models only
 - `low_cpu_mem_usage` - Memory optimization
 - `attention_mechanism` - flash_attention_2/sdpa/eager
+- `enabled_tools` - Dict of tool name to bool for visibility
 
-## Model Management Pattern
+## AI Model Managers
 
+All model loading goes through centralized managers in `modules/core_components/ai_models/`:
+
+### TTS Manager
 ```python
-# Always check before loading
-check_and_unload_if_different(model_id)
+from modules.core_components.ai_models import get_tts_manager
+tts_manager = get_tts_manager(user_config, samples_dir)
 
-# Use attention helper
-model, attn = load_model_with_attention(
-    ModelClass,
-    model_name,
-    user_preference=_user_config.get("attention_mechanism", "auto"),
-    device_map="cuda:0",
-    dtype=torch.bfloat16,
-    low_cpu_mem_usage=_user_config.get("low_cpu_mem_usage", False)
-)
-
-# Respect offline mode
-if _user_config.get("offline_mode", False):
-    # Check local models only
+model = tts_manager.get_qwen3_base(size)           # 0.6B or 1.7B
+model = tts_manager.get_qwen3_custom_voice(size)    # 0.6B or 1.7B
+model = tts_manager.get_qwen3_voice_design()        # 1.7B only
+model = tts_manager.get_vibevoice_tts(size)          # 1.5B, Large, Large-4bit
+tts_manager.unload_all()                             # Free VRAM
 ```
+
+### ASR Manager
+```python
+from modules.core_components.ai_models import get_asr_manager
+asr_manager = get_asr_manager(user_config)
+
+model = asr_manager.get_whisper()
+model = asr_manager.get_vibevoice_asr()
+asr_manager.whisper_available  # bool - check if Whisper installed
+asr_manager.unload_all()
+```
+
+Managers automatically unload the previous model when switching, and respect `offline_mode` and `attention_mechanism` config.
 
 ## Emotion System
 
 - **40+ emotions** stored in `config.json` under `"emotions"` key
-- **Hardcoded defaults** in `modules/emotion_manager.py` as `CORE_EMOTIONS`
-- **Active emotions** loaded into `_active_emotions` global at runtime
+- **Hardcoded defaults** in `modules/core_components/emotion_manager.py` as `CORE_EMOTIONS`
+- **Active emotions** loaded into `_active_emotions` at runtime
 - **Intensity**: 0.0-2.0 multiplier
 - **Detection**: Regex `\(emotion\)` for Qwen Base conversations
 - **Application**: `apply_emotion_preset(emotion, intensity)` adjusts temp/penalty/top_p
 - **Management**: Users can save/delete/reset emotions via UI buttons
 - **Storage**: Emotions sorted alphabetically (case-insensitive) in config
 
+## Custom Gradio Components
+
+### FileLister (`modules/core_components/gradio_filelister/`)
+Custom Gradio component (v0.4.0) for file management. Pre-built wheel in `wheel/`.
+- Multi-select for batch file deletion
+- Double-click to play audio instantly
+- Used by voice_clone, prep_audio, and output_history tools
+
+To rebuild: `python -m build --wheel` in the gradio_filelister directory.
+
 ## Audio Standards
 
 - **Sample Rate**: 24kHz
 - **Format**: WAV, 16-bit PCM, Mono
-- **Library**: `soundfile` (already installed)
-- **Validation**: Use `check_audio_format()` helper
+- **Library**: `soundfile`
+- **Validation**: Use `check_audio_format()` from `audio_utils.py`
 
 ## User Feedback Patterns
 
@@ -232,7 +291,7 @@ return None, "Error: Clear description of what went wrong and how to fix it"
 ```
 
 ### Status Updates
-- Never Use emoji prefixes
+- Never use emoji prefixes in console output
 - Provide actionable information
 - Include progress indicators
 
@@ -249,9 +308,9 @@ else:
     # Linux-specific code
 ```
 
-** Windows Console Encoding:**
-- Avoid Unicode symbols in print() that go to console
-- Use ASCII-safe alternatives: `[OK]` instead of `✓`
+**Windows Console Encoding:**
+- Avoid Unicode symbols in `print()` that go to console
+- Use ASCII-safe alternatives: `[OK]` instead of checkmarks
 - UI (Gradio) can use any Unicode
 
 ## File Path Handling
@@ -271,30 +330,31 @@ str(file_path)
 
 Before submitting any code change, verify:
 
-- [ ] Is this feature in a module? (If >50 lines)
+- [ ] Is this feature in a tool module? (Not in main file)
 - [ ] Does it respect user config settings?
 - [ ] Does it provide progress feedback?
 - [ ] Does it handle errors gracefully?
 - [ ] Does it work cross-platform?
 - [ ] Does it play completion notification?
 - [ ] Is it documented with docstrings?
+- [ ] No type hints used?
 
 ## Testing Patterns
 
 **CRITICAL: ALL testing MUST use venv Python!**
 
-When adding features:
 1. **ALWAYS use `.\venv\Scripts\python.exe`** for all Python commands
-2. **Place tests in `modules/core_components/tests/` folder** - create it if it doesn't exist
-3. **Check for existing tests first** - look in `modules/tests/` before creating new ones
-4. **Modify existing tests** if they're missing coverage rather than duplicating
-5. **Test naming**: `test_[feature_name].py` (e.g., `test_emotion_manager.py`)
-6. Test with default config
-3. Test with custom folder paths
-4. Test with offline mode enabled
-5. Test on Windows (encoding issues!)
-6. Test model loading/unloading
-7. Test with notifications disabled
+2. **Each tool supports standalone testing:**
+   ```python
+   python -m modules.core_components.tools.voice_clone
+   ```
+3. **Test naming**: `test_[feature_name].py`
+4. Test with default config
+5. Test with custom folder paths
+6. Test with offline mode enabled
+7. Test on Windows (encoding issues!)
+8. Test model loading/unloading
+9. Test with notifications disabled
 
 ## Common Gotchas
 
@@ -313,10 +373,15 @@ When adding features:
 - Use `/` in path joining (works cross-platform)
 - Never hardcode `\\` or `/`
 
-**Model Loading**
-- Always unload before loading different model
-- Check offline mode before downloading
-- Use attention mechanism helper
+**Circular Imports**
+- `tools/__init__.py` imports all tool modules
+- Tool modules must NOT import from `tools/__init__.py` at module level
+- Use lazy imports inside functions if needed: `from modules.core_components.tools import save_config`
+
+**Gradio 6 CSS**
+- Tab DOM structure: `#elem-id > .tab-wrapper > .tab-container[role="tablist"] > button`
+- No `.tab-nav` class (that was Gradio 4/5)
+- Use `>` direct child selectors to scope CSS to specific tab levels
 
 ## Key Functions Reference
 
@@ -327,30 +392,29 @@ play_completion_beep()  # Respects config setting
 
 **Model Management**
 ```python
-check_and_unload_if_different(model_id)
-unload_all_models()  # Free VRAM
+tts_manager.unload_all()  # Free TTS VRAM
+asr_manager.unload_all()  # Free ASR VRAM
 ```
 
 **Config**
 ```python
-save_preference(key, value)  # Auto-saves config
+save_preference(key, value)  # Auto-saves to config.json
 ```
 
-**UI Helpers**
+**Help Content**
 ```python
-from modules.ui_components import ui_help
-format_help_html(markdown_text)
+format_help_html(markdown_text)  # Convert markdown to styled HTML
 ```
 
 ---
 
 ## Starting a New Feature?
 
-1. **Plan the module structure first**
-2. Create files in `modules/core_components`
-3. Implement feature in module
-4. Import and wire in main file
-5. Test thoroughly
-6. Document in this file if it's a new pattern
+1. Create a tool module in `modules/core_components/tools/`
+2. Follow the Tool pattern (ToolConfig + create_tool + setup_events)
+3. Register in `tools/__init__.py`
+4. Add to `TOGGLEABLE_TOOLS` in `settings.py`
+5. Test standalone: `python -m modules.core_components.tools.my_tool`
+6. Document in this file if it introduces a new pattern
 
-**Remember: We're refactoring toward modularity, not adding to the monolith!**
+**The main file should rarely need changes. Tools are self-contained.**
