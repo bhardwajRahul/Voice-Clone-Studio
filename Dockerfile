@@ -75,6 +75,7 @@ RUN pip install --no-cache-dir \
 
 COPY ./wheel /home/user/app/wheel
 COPY ./requirements.txt /home/user/app/requirements.txt
+WORKDIR /home/user/app
 RUN pip install --no-cache-dir -r /home/user/app/requirements.txt
 RUN rustup self uninstall -y
 
