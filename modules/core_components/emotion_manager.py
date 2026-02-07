@@ -263,9 +263,9 @@ def get_emotion_choices(emotions_dict):
         emotions_dict: Dictionary of emotions
 
     Returns:
-        List of emotion names sorted alphabetically (case-insensitive)
+        List with (None) first (no emotion), then emotion names sorted alphabetically (case-insensitive)
     """
-    return sorted(emotions_dict.keys(), key=lambda x: x.lower())
+    return ["(None)"] + sorted(emotions_dict.keys(), key=lambda x: x.lower())
 
 
 def calculate_emotion_values(emotions_dict, emotion_name, intensity, baseline_temp=0.9, baseline_top_p=1.0, baseline_penalty=1.05):
@@ -370,8 +370,80 @@ def handle_delete_emotion(emotions_dict, config, config_file, confirm_value, emo
     )
 
     if success:
-        # Return updated choices and clear trigger
+        # Return updated choices and select (None) for no emotion
         new_choices = get_emotion_choices(updated_emotions)
-        return True, message, updated_emotions, new_choices, ""
+        # Select first item (None) = no emotion
+        emotion_to_select = "(None)"
+        return True, message, updated_emotions, new_choices, emotion_to_select
     else:
         return False, message, emotions_dict, [], ""
+
+
+# ============================================================================
+# UI Helper Functions (Gradio-specific)
+# ============================================================================
+
+def process_save_emotion_result(save_result, shared_state):
+    """Process emotion save result and return UI updates.
+
+    This helper encapsulates the common pattern of:
+    1. Unpacking the 5-tuple from handle_save_emotion
+    2. Updating shared_state with new emotions
+    3. Creating Gradio dropdown update
+
+    Args:
+        save_result: Tuple from handle_save_emotion (success, message, updated_emotions, new_choices, emotion_to_select)
+        shared_state: Dictionary containing '_active_emotions' key
+
+    Returns:
+        Tuple: (dropdown_update, message) for Gradio outputs
+    """
+    try:
+        import gradio as gr
+    except ImportError:
+        raise ImportError("Gradio is required for UI helpers")
+
+    success, message, updated_emotions, new_choices, emotion_to_select = save_result
+
+    # Update shared state if successful
+    if success:
+        shared_state['_active_emotions'] = updated_emotions
+
+    # Return dropdown update and message
+    return (
+        gr.update(choices=new_choices, value=emotion_to_select) if new_choices else gr.update(),
+        message
+    )
+
+
+def process_delete_emotion_result(delete_result, shared_state):
+    """Process emotion delete result and return UI updates.
+
+    This helper encapsulates the common pattern of:
+    1. Unpacking the 5-tuple from handle_delete_emotion
+    2. Updating shared_state with new emotions
+    3. Creating Gradio dropdown update
+
+    Args:
+        delete_result: Tuple from handle_delete_emotion (success, message, updated_emotions, new_choices, emotion_to_select)
+        shared_state: Dictionary containing '_active_emotions' key
+
+    Returns:
+        Tuple: (dropdown_update, message, clear_trigger) for Gradio outputs
+    """
+    try:
+        import gradio as gr
+    except ImportError:
+        raise ImportError("Gradio is required for UI helpers")
+
+    success, message, updated_emotions, new_choices, emotion_to_select = delete_result
+
+    # Update shared state if successful
+    if success:
+        shared_state['_active_emotions'] = updated_emotions
+        # Select the emotion returned (empty string for "no emotion")
+        return gr.update(choices=new_choices, value=emotion_to_select), message, ""
+    elif message:  # Error message
+        return gr.update(), message, ""
+    else:  # Cancelled
+        return gr.update(), "", ""

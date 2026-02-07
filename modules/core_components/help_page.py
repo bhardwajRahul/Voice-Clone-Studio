@@ -1,11 +1,24 @@
 """
-Help content for Voice Clone Studio UI.
-Contains all help documentation for each feature tab.
+Help Guide Tab
+
+Displays documentation and tips for using Voice Clone Studio.
+
+Standalone testing:
+    python -m modules.core_components.tools.help_page
 """
+# Setup path for standalone testing BEFORE imports
+if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+    project_root = Path(__file__).parent.parent.parent.parent
+    sys.path.insert(0, str(project_root))
 
+import gradio as gr
 from textwrap import dedent
+from modules.core_components.tool_base import Tool, ToolConfig
 
 
+# Help content functions
 def show_voice_clone_help():
     """Return help content for Voice Clone tab."""
     return dedent("""
@@ -164,7 +177,7 @@ def show_voice_design_help():
         """)
 
 
-def show_prep_samples_help():
+def show_prep_audio_help():
     """Return help content for Prep Samples tab."""
     return dedent("""
         ### 🎬 Prep Samples
@@ -377,3 +390,126 @@ def show_tips_help():
         - **Seed control**: Reproducible generation
         - **Batch processing**: Automate repetitive tasks
         """)
+
+
+class HelpGuideTool(Tool):
+    """Help Guide tool implementation."""
+
+    config = ToolConfig(
+        name="Help Guide",
+        module_name="tool_help_page",
+        description="Documentation and usage tips",
+        enabled=True,
+        category="utility"
+    )
+
+    @classmethod
+    def create_content(cls, shared_state):
+        """Create Help Guide content without a container wrapper.
+
+        Use this when rendering help outside of the main tab bar
+        (e.g. in an Accordion at the bottom of the page).
+        """
+        components = {}
+        format_help_html = shared_state.get('format_help_html')
+
+        gr.Markdown("# Voice Clone Studio - Help & Guide")
+
+        components['help_topic'] = gr.Radio(
+            choices=[
+                "Voice Clone",
+                "Voice Presets",
+                "Conversation",
+                "Voice Design",
+                "Prep Samples",
+                "Finetune Dataset",
+                "Train Model",
+                "Tips & Tricks"
+            ],
+            value="Voice Clone",
+            show_label=False,
+            interactive=True,
+            container=False
+        )
+
+        components['help_content'] = gr.HTML(
+            value=format_help_html(show_voice_clone_help()),
+            container=True,
+            padding=True
+        )
+
+        return components
+
+    @classmethod
+    def create_tool(cls, shared_state):
+        """Create Help Guide tool UI."""
+        components = {}
+
+        # Extract needed items from shared_state
+        format_help_html = shared_state.get('format_help_html')
+
+        with gr.TabItem("Help Guide"):
+            gr.Markdown("# Voice Clone Studio - Help & Guide")
+
+            components['help_topic'] = gr.Radio(
+                choices=[
+                    "Voice Clone",
+                    "Voice Presets",
+                    "Conversation",
+                    "Voice Design",
+                    "Prep Samples",
+                    "Finetune Dataset",
+                    "Train Model",
+                    "Tips & Tricks"
+                ],
+                value="Voice Clone",
+                show_label=False,
+                interactive=True,
+                container=False
+            )
+
+            components['help_content'] = gr.HTML(
+                value=format_help_html(show_voice_clone_help()),
+                container=True,
+                padding=True
+            )
+
+        return components
+
+    @classmethod
+    def setup_events(cls, components, shared_state):
+        """Wire up Help Guide events."""
+
+        # Extract needed items from shared_state
+        format_help_html = shared_state.get('format_help_html')
+
+        def show_help(topic):
+            """Show help for selected topic."""
+            help_map = {
+                "Voice Clone": show_voice_clone_help,
+                "Conversation": show_conversation_help,
+                "Voice Presets": show_voice_presets_help,
+                "Voice Design": show_voice_design_help,
+                "Prep Samples": show_prep_audio_help,
+                "Finetune Dataset": show_finetune_help,
+                "Train Model": show_train_help,
+                "Tips & Tricks": show_tips_help
+            }
+            return format_help_html(help_map[topic]())
+
+        # Event handler for radio selection
+        components['help_topic'].change(
+            fn=show_help,
+            inputs=components['help_topic'],
+            outputs=components['help_content']
+        )
+
+
+# Export for tab registry
+get_tool_class = lambda: HelpGuideTool
+
+
+# Standalone testing
+if __name__ == "__main__":
+    from modules.core_components.tools import run_tool_standalone
+    run_tool_standalone(HelpGuideTool, port=7869, title="Help Guide - Standalone")

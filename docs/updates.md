@@ -1,6 +1,21 @@
 # Version History
 
 
+## February 7, 2026
+
+#### Version 1.0.0 - Complete Modular Rewrite
+- **Full Modular Architecture** - Complete rewrite from a 6000+ line monolith into independent tool modules under `modules/core_components/tools/`
+- **Tool System** - Each tab is now a self-contained tool with its own UI, events, and logic, loaded dynamically from a central registry
+- **Enable/Disable Tools** - New "Visible Tools" section in Settings lets you toggle any tab on or off (persisted in config, takes effect on restart)
+- **Simplified Prep Audio** - Formerly "Prep Samples", now serves dual purpose for both voice sample preparation and dataset creation in a single unified tool
+- **Improved FileLister Component** - Custom Gradio component (v0.4.0) with multi-select for batch file deletion and double-click to instantly play audio
+- **Help Guide in Settings** - Help documentation moved into the Settings tab as a sub-tab, keeping the main tab bar clean
+- **Settings Tab Right-Aligned** - Settings gear icon pushed to the far right of the tab bar for quick access
+- **Centralized Constants** - All model sizes, languages, speakers, and defaults defined once in `constants.py`
+- **AI Model Managers** - Centralized TTS and ASR model management with automatic VRAM optimization and model switching
+- **Shared State Architecture** - Tools receive configuration, utilities, and managers through a unified shared state, enabling independent testing
+- **Cleaned Up Project** - Removed obsolete documentation, stale files, and migration artifacts
+
 ## January 30, 2026
 
 #### Version 0.7.6 - Advanced Parameters & Emotion Presets
