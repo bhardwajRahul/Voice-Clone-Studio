@@ -18,7 +18,7 @@ from pathlib import Path
 from modules.core_components.tool_base import Tool, ToolConfig
 from modules.core_components.help_page import (
     show_voice_clone_help, show_conversation_help, show_voice_presets_help,
-    show_voice_design_help, show_prep_audio_help, show_finetune_help,
+    show_voice_design_help, show_prep_audio_help, show_dataset_help,
     show_train_help, show_tips_help
 )
 
@@ -30,8 +30,8 @@ TOGGLEABLE_TOOLS = [
     ("Conversation", "Conversation"),
     ("Voice Design", "Voice Design"),
     ("Prep Samples", "Prep Samples"),
-    ("Output History", "Output History"),
     ("Train Model", "Train Model"),
+    ("Output History", "Output History"),
 ]
 
 
@@ -61,41 +61,56 @@ class SettingsTool(Tool):
                     gr.Markdown("# ⚙️ Settings")
                     gr.Markdown("Configure global application settings")
 
-                    gr.Markdown("### Model Loading")
-
                     with gr.Column():
                         with gr.Row():
                             with gr.Column():
+                                gr.Markdown("### Displayed Tools")
+
+                                # Get current enabled_tools from config
+                                tool_settings = _user_config.get("enabled_tools", {})
+
+                                with gr.Column():
+                                    for key, label in TOGGLEABLE_TOOLS:
+                                        is_enabled = tool_settings.get(key, True)
+                                        components[f'tool_toggle_{key}'] = gr.Checkbox(
+                                            label=label,
+                                            value=is_enabled,
+                                            interactive=True
+                                        )
+
+                            with gr.Column():
+                                gr.Markdown("### Model Optimizations")
                                 components['settings_low_cpu_mem'] = gr.Checkbox(
                                     label="Low CPU Memory Usage (Slower loading time)",
                                     value=_user_config.get("low_cpu_mem_usage", False),
-                                    info="Reduces CPU RAM usage when loading models by loading weights in smaller chunks. Tradeoff: slightly slower model loading time."
+                                    info="Reduces CPU RAM usage when loading models."
                                 )
 
                                 components['settings_attention_mechanism'] = gr.Dropdown(
-                                    label="Attention Mechanism",
+                                    label="Choose Attention Mechanism",
                                     choices=["auto", "flash_attention_2", "sdpa", "eager"],
                                     value=_user_config.get("attention_mechanism", "auto"),
-                                    info="Choose attention implementation.\nAuto = fastest available. flash_attention_2 (fastest) → sdpa (fast, built-in PyTorch 2.0+) → eager (slowest, always works)"
+                                    info="Auto = fastest available."
                                 )
-
-                                with gr.Row():
+                                with gr.Column():
+                                    gr.Markdown("### Audio Notifications")
                                     components['settings_audio_notifications'] = gr.Checkbox(
-                                        label="Audio Notifications",
+                                        label="Enable Audio Notifications",
                                         value=_user_config.get("browser_notifications", True),
                                         info="Play sound when audio generation completes"
                                     )
 
                             with gr.Column():
+                                gr.Markdown("### Model Downloading")
                                 components['settings_offline_mode'] = gr.Checkbox(
-                                    label="Offline Mode (Use cached models only)",
+                                    label="Offline Mode",
                                     value=_user_config.get("offline_mode", False),
                                     info="When enabled, only uses models found in models folder"
                                 )
 
                                 components['model_select'] = gr.Dropdown(
-                                    label="Select Model to Download",
-                                    info="Download models directly to models folder (recommended for offline mode)\nWhisper cannot be auto-downloaded, copy local copy of Whisper in ./models.",
+                                    label="Select Model to Download to Models Folder",
+                                    info="Needed to work in offline mode.\nFor Whisper models, copy local files to models folder",
                                     choices=[
                                         "--- Qwen3-TTS Base ---",
                                         "Qwen3-TTS-12Hz-0.6B-Base",
@@ -168,7 +183,6 @@ class SettingsTool(Tool):
                                 )
                                 components['reset_datasets_btn'] = gr.Button("Reset", size="sm")
 
-                        # Row 2: Models and Trained Models folder
                         with gr.Row():
                             with gr.Column():
                                 components['settings_models_folder'] = gr.Textbox(
@@ -197,33 +211,6 @@ class SettingsTool(Tool):
                             max_lines=10
                         )
 
-                    gr.Markdown("### Visible Tools")
-                    gr.Markdown("Toggle which tools appear as tabs. Changes take effect after restarting the app.")
-
-                    # Get current enabled_tools from config
-                    tool_settings = _user_config.get("enabled_tools", {})
-
-                    with gr.Row():
-                        # Split into two columns for cleaner layout
-                        with gr.Column():
-                            for key, label in TOGGLEABLE_TOOLS[:4]:
-                                is_enabled = tool_settings.get(key, True)
-                                components[f'tool_toggle_{key}'] = gr.Checkbox(
-                                    label=label,
-                                    value=is_enabled,
-                                    interactive=True
-                                )
-                        with gr.Column():
-                            for key, label in TOGGLEABLE_TOOLS[4:]:
-                                is_enabled = tool_settings.get(key, True)
-                                components[f'tool_toggle_{key}'] = gr.Checkbox(
-                                    label=label,
-                                    value=is_enabled,
-                                    interactive=True
-                                )
-
-                    components['tool_toggle_status'] = gr.Markdown("")
-
                 with gr.TabItem("Help Guide"):
                     gr.Markdown("# Voice Clone Studio - Help & Guide")
 
@@ -234,7 +221,7 @@ class SettingsTool(Tool):
                             "Conversation",
                             "Voice Design",
                             "Prep Samples",
-                            "Finetune Dataset",
+                            "Prep Dataset",
                             "Train Model",
                             "Tips & Tricks"
                         ],
@@ -307,7 +294,7 @@ class SettingsTool(Tool):
             comp.change(
                 lambda enabled, k=key: toggle_tool(k, enabled),
                 inputs=[comp],
-                outputs=[components['tool_toggle_status']]
+                outputs=[components['settings_status']]
             )
 
         # Reset button handlers
@@ -407,7 +394,7 @@ class SettingsTool(Tool):
                 "Voice Presets": show_voice_presets_help,
                 "Voice Design": show_voice_design_help,
                 "Prep Samples": show_prep_audio_help,
-                "Finetune Dataset": show_finetune_help,
+                "Prep Dataset": show_dataset_help,
                 "Train Model": show_train_help,
                 "Tips & Tricks": show_tips_help
             }
@@ -427,11 +414,4 @@ get_tool_class = lambda: SettingsTool
 # Standalone testing
 if __name__ == "__main__":
     from modules.core_components.tools import run_tool_standalone
-
-    # Settings needs download_model_from_huggingface function
-    def mock_download_model(model_id, progress=None):
-        """Mock download function for standalone testing."""
-        return False, f"Download not available in standalone mode. Model: {model_id}", None
-
-    extra_shared_state = {'download_model_from_huggingface': mock_download_model}
-    run_tool_standalone(SettingsTool, port=7870, title="Settings - Standalone", extra_shared_state=extra_shared_state)
+    run_tool_standalone(SettingsTool, port=7870, title="Settings - Standalone")

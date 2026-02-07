@@ -47,16 +47,27 @@ class PrepSamplesTool(Tool):
         WHISPER_AVAILABLE = shared_state['WHISPER_AVAILABLE']
         DEEPFILTER_AVAILABLE = shared_state['DEEPFILTER_AVAILABLE']
 
+        # Let's hide dataset if train model is off
+        train_model_enabled = _user_config.get("enabled_tools", {}).get("Train Model", True)
+
         with gr.TabItem("Prep Audio Samples"):
-            gr.Markdown("Prepare audio samples for voice cloning")
+            if train_model_enabled is True:
+                gr.Markdown("Prepare audio samples for voice cloning or finetuning datasets.")
+            else:
+                gr.Markdown("Prepare audio samples for voice cloning.")
+
             with gr.Row():
                 # Left column - File browser
+
                 with gr.Column(scale=1):
-                    gr.Markdown("### Select Sample or Dataset")
+                    if train_model_enabled is True:
+                        gr.Markdown("### Select Samples or Dataset")
+
                     components['prep_data_type'] = gr.Radio(
                         choices=['Samples', 'Datasets'],
                         value='Samples',
-                        show_label=False
+                        show_label=False,
+                        visible=train_model_enabled,
                     )
 
                     # --- Samples mode ---
@@ -129,7 +140,7 @@ class PrepSamplesTool(Tool):
 
                 # Right column - Audio editing
                 with gr.Column(scale=2):
-                    gr.Markdown("### Add or Edit Audio Sample <small>(Load audio or video file)</small>")
+                    gr.Markdown("### Add or Edit Audio Sample <small>(Drag and drop audio or video files)</small>")
 
                     components['prep_file_input'] = gr.File(
                         label="Audio or Video File",

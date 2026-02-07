@@ -62,7 +62,7 @@ class VoiceCloneTool(Tool):
 
         with gr.TabItem("Voice Clone") as voice_clone_tab:
             components['voice_clone_tab'] = voice_clone_tab
-            gr.Markdown("Clone Voices from Samples, using Qwen3-TTS or VibeVoice")
+            gr.Markdown("Clone Voices from Samples. <small>(Use Prep Audio Samples to add samples)</small>")
             with gr.Row():
                 # Left column - Sample selection (1/3 width)
                 with gr.Column(scale=1):

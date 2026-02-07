@@ -69,6 +69,114 @@ def check_model_available_locally(model_name):
     return None
 
 
+def download_model_from_huggingface(model_id, models_dir=None, local_folder_name=None, progress=None):
+    """Download model from HuggingFace using git clone (not cache).
+
+    Uses git-lfs to download directly to models/ folder without using HF cache.
+    Users can also manually clone with:
+    git clone https://huggingface.co/{model_id} models/{folder_name}
+
+    Args:
+        model_id: HuggingFace model ID (e.g., "Qwen/Qwen3-TTS-12Hz-1.7B-Base")
+        models_dir: Path to models directory (defaults to project models folder)
+        local_folder_name: Custom local folder name (default: extract from model_id)
+        progress: Optional Gradio progress callback
+
+    Returns:
+        Tuple: (success: bool, message: str, local_path: str or None)
+    """
+    import subprocess
+    import threading
+
+    try:
+        # Validate inputs
+        if not model_id or "/" not in model_id:
+            return False, f"Invalid model ID: {model_id}. Use format 'Author/ModelName'", None
+
+        # Determine local folder name
+        if not local_folder_name:
+            local_folder_name = model_id.split("/")[-1]
+
+        if models_dir is None:
+            models_dir = Path(__file__).parent.parent.parent.parent / "models"
+        else:
+            models_dir = Path(models_dir)
+
+        models_dir.mkdir(exist_ok=True)
+        local_path = models_dir / local_folder_name
+
+        # Check if already downloaded (look for any .safetensors files)
+        if list(local_path.glob("*.safetensors")):
+            return True, f"Model already exists at {local_path}", str(local_path)
+
+        # Check if git-lfs is installed
+        try:
+            subprocess.run(["git", "lfs", "version"], capture_output=True, check=True, timeout=5)
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+            error_msg = (
+                "git-lfs is not installed or not in PATH. Install from: https://git-lfs.com\n"
+                "Or manually download from HuggingFace and place in: models/" + local_folder_name
+            )
+            print(error_msg, flush=True)
+            return False, error_msg, None
+
+        # Clone repository with git-lfs
+        hf_url = f"https://huggingface.co/{model_id}"
+
+        try:
+            print(f"\nStarting download: {model_id}", flush=True)
+            print(f"URL: {hf_url}", flush=True)
+            print(f"Destination: {local_path}\n", flush=True)
+
+            # Track download state
+            download_complete = {"done": False, "returncode": None}
+
+            def run_download():
+                """Run git clone without capturing output so it shows in console."""
+                try:
+                    result = subprocess.run(
+                        ["git", "clone", hf_url, str(local_path)],
+                        timeout=3600
+                    )
+                    download_complete["returncode"] = result.returncode
+                except Exception as e:
+                    print(f"Download error: {e}", flush=True)
+                    download_complete["returncode"] = -1
+                finally:
+                    download_complete["done"] = True
+
+            # Start download thread
+            download_thread = threading.Thread(target=run_download, daemon=True)
+            download_thread.start()
+
+            # Wait for download to complete (progress shown in console)
+            download_thread.join()
+
+            if download_complete["returncode"] != 0:
+                return False, "Download failed. Check console for details.", None
+
+            # Verify model files exist (look for any .safetensors files)
+            if not list(local_path.glob("*.safetensors")):
+                return False, "Model files not found - download may be incomplete.", None
+
+            print(f"\nSuccessfully downloaded to {local_path}\n", flush=True)
+            return True, f"Successfully downloaded to {local_path}", str(local_path)
+
+        except subprocess.TimeoutExpired:
+            if local_path.exists():
+                import shutil
+                shutil.rmtree(local_path, ignore_errors=True)
+            return False, "Download timed out after 1 hour. Check your internet connection and try again.", None
+        except Exception as e:
+            if local_path.exists():
+                import shutil
+                shutil.rmtree(local_path, ignore_errors=True)
+            return False, f"Download error: {str(e)}", None
+
+    except Exception as e:
+        return False, f"Unexpected error: {str(e)}", None
+
+
 def empty_cuda_cache():
     """Empty CUDA cache if available."""
     if torch.cuda.is_available():

@@ -11,16 +11,16 @@ import json
 import markdown
 import platform
 from pathlib import Path
-from modules.core_components.tool_base import ToolConfig, Tool
+# from modules.core_components.tool_base import ToolConfig, Tool
 
 # Import all tool modules here
-from modules.core_components.tools import output_history
-from modules.core_components.tools import voice_design
 from modules.core_components.tools import voice_clone
 from modules.core_components.tools import voice_presets
 from modules.core_components.tools import conversation
+from modules.core_components.tools import voice_design
 from modules.core_components.tools import prep_audio
 from modules.core_components.tools import train_model
+from modules.core_components.tools import output_history
 from modules.core_components.tools import settings
 
 # Registry of available tools
@@ -31,8 +31,8 @@ ALL_TOOLS = {
     'conversation': (conversation, conversation.ConversationTool.config),
     'voice_design': (voice_design, voice_design.VoiceDesignTool.config),
     'prep_audio': (prep_audio, prep_audio.PrepSamplesTool.config),
-    'output_history': (output_history, output_history.OutputHistoryTool.config),
     'train_model': (train_model, train_model.TrainModelTool.config),
+    'output_history': (output_history, output_history.OutputHistoryTool.config),
     'settings': (settings, settings.SettingsTool.config),
 }
 
@@ -546,7 +546,7 @@ def load_sample_details(sample_name):
     return None, "", ""
 
 
-# ===== Dataset Management Helpers (Finetune Dataset & Train Model tools) =====
+# ===== Dataset Management Helpers (Prep Dataset & Train Model tools) =====
 
 def get_dataset_folders():
     """Get list of subfolders in datasets directory."""
@@ -654,7 +654,8 @@ def build_shared_state(user_config, active_emotions, directories, constants, man
     from modules.core_components.ai_models.model_utils import (
         get_trained_models as get_trained_models_util,
         get_trained_model_names as get_trained_model_names_util,
-        train_model as train_model_util
+        train_model as train_model_util,
+        download_model_from_huggingface as download_model_util
     )
 
     # Import audio utilities BEFORE building shared_state
@@ -804,6 +805,13 @@ def build_shared_state(user_config, active_emotions, directories, constants, man
         'convert_to_mono': lambda audio: convert_to_mono_util(audio, directories.get('TEMP_DIR')),
         'clean_audio': lambda audio, progress=None: clean_audio_standalone(audio, progress),
         'save_as_sample': lambda audio, text, name: save_as_sample_util(audio, text, name, directories.get('SAMPLES_DIR')),
+
+        # Model downloading
+        'download_model_from_huggingface': lambda model_id, progress=None: download_model_util(
+            model_id,
+            models_dir=directories.get('OUTPUT_DIR').parent / user_config.get("models_folder", "models"),
+            progress=progress
+        ),
     }
 
     # Lambdas that reference shared_state (must be added after dict creation)
