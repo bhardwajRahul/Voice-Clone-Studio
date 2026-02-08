@@ -128,32 +128,34 @@ echo.
 
 REM Optional modules
 echo [7/7] Optional modules...
-if %LUXTTS_CHOICE%==1 (
-    echo.
-    echo Installing LuxTTS prerequisites...
-    echo [Step 1/3] Installing LinaCodec...
-    pip install git+https://github.com/ysharma3501/LinaCodec.git
-    if %errorlevel% neq 0 (
-        echo WARNING: LinaCodec installation failed. LuxTTS will not be available.
-        goto :skip_luxtts
-    )
-    echo [Step 2/3] Installing piper-phonemize...
-    pip install piper-phonemize --find-links https://k2-fsa.github.io/icefall/piper_phonemize.html
-    if %errorlevel% neq 0 (
-        echo WARNING: piper-phonemize installation failed. LuxTTS will not be available.
-        goto :skip_luxtts
-    )
-    echo [Step 3/3] Installing zipvoice (LuxTTS)...
-    pip install "zipvoice @ git+https://github.com/ysharma3501/LuxTTS.git"
-    if %errorlevel% neq 0 (
-        echo WARNING: zipvoice installation failed. LuxTTS will not be available.
-        goto :skip_luxtts
-    )
-    echo LuxTTS installed successfully!
-) else (
-    echo Skipping LuxTTS installation.
+if not "%LUXTTS_CHOICE%"=="1" goto :skip_luxtts
+
+echo.
+echo Installing LuxTTS prerequisites...
+echo [Step 1/3] Installing LinaCodec...
+pip install git+https://github.com/ysharma3501/LinaCodec.git
+if %errorlevel% neq 0 (
+    echo WARNING: LinaCodec installation failed. LuxTTS will not be available.
+    goto :skip_luxtts
 )
+echo [Step 2/3] Installing piper-phonemize...
+pip install piper-phonemize --find-links https://k2-fsa.github.io/icefall/piper_phonemize.html
+if %errorlevel% neq 0 (
+    echo WARNING: piper-phonemize installation failed. LuxTTS will not be available.
+    goto :skip_luxtts
+)
+echo [Step 3/3] Installing zipvoice (LuxTTS)...
+pip install "zipvoice @ git+https://github.com/ysharma3501/LuxTTS.git"
+if %errorlevel% neq 0 (
+    echo WARNING: zipvoice installation failed. LuxTTS will not be available.
+    goto :skip_luxtts
+)
+echo LuxTTS installed successfully!
+goto :luxtts_done
+
 :skip_luxtts
+echo Skipping LuxTTS installation.
+:luxtts_done
 echo.
 
 echo ========================================
@@ -172,6 +174,8 @@ echo Option 2 - Use prebuilt wheel (faster, no compiler needed):
 echo   Download a wheel matching your Python version
 echo   Then: pip install downloaded-wheel-file.whl
 echo.
+echo   Possible source for wheels (opening in browser):
+echo   https://huggingface.co/MonsterMMORPG/Wan_GGUF/tree/main
 echo ========================================
 echo.
 echo To launch Voice Clone Studio:
